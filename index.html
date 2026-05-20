@@ -76,7 +76,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .btn-add.primary:hover{opacity:.83;transform:translateY(-1px)}
 
 /* TABS */
-#tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--border);background:var(--s0)}
+#tabs{display:flex;align-items:center;padding:0 14px 0 28px;border-bottom:1px solid var(--border);background:var(--s0)}
 .tab-btn{padding:10px 18px;font-size:12.5px;font-weight:600;font-family:'Outfit',sans-serif;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;transition:all var(--t);margin-bottom:-1px}
 .tab-btn:hover{color:var(--text)}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
@@ -441,6 +441,13 @@ body.is-dragging-task .tree-client-children{display:block!important}
 .bulk-input:focus{border-color:var(--accent)}
 .bulk-apply-btn{background:var(--accent);border:none;color:#fff;padding:5px 13px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all var(--t)}
 .bulk-apply-btn:hover{opacity:.83}
+.bulk-toggle-btn{padding:0 16px;height:34px;font-size:12px;font-weight:600;font-family:'Syne',sans-serif;background:var(--s2);border:1px solid var(--border2);color:var(--muted);border-radius:var(--r);cursor:pointer;white-space:nowrap;transition:background var(--t),color var(--t),border-color var(--t)}
+.bulk-toggle-btn:hover{background:rgba(167,139,250,.12);border-color:var(--accent);color:var(--accent)}
+.bulk-toggle-btn.active{background:rgba(167,139,250,.15);border-color:var(--accent);color:var(--accent)}
+.bulk-sel-all-btn{padding:2px 10px;height:24px;font-size:11px;font-weight:600;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:var(--accent);border-radius:5px;cursor:pointer;white-space:nowrap}
+.bulk-sel-all-btn:hover{background:rgba(167,139,250,.2)}
+.bulk-delete-btn{padding:4px 12px;font-size:12px;font-weight:600;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--p-high);border-radius:var(--r);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.bulk-delete-btn:hover{background:rgba(248,113,113,.2);border-color:var(--p-high)}
 .bulk-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 5px;border-radius:4px;transition:all var(--t);margin-left:auto}
 .bulk-close:hover{background:var(--s3);color:var(--text)}
 .task-sel-chk{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);background:none;cursor:pointer;flex-shrink:0;display:none;align-items:center;justify-content:center;transition:all var(--t)}
@@ -1859,7 +1866,12 @@ function renderMain(){
     <button class="tab-btn${ST.tab==='tasks'?' active':''}" onclick="switchTab('tasks')">Tasques<span class="tab-pill">${tasks.length}</span></button>
     <button class="tab-btn${ST.tab==='milestones'?' active':''}" onclick="switchTab('milestones')">Fites<span class="tab-pill">${ms.length}</span></button>
     <button class="tab-btn${ST.tab==='checklist'?' active':''}" onclick="switchTab('checklist')">Checklists${projCls.length?`<span class="tab-pill">${clDoneItems}/${clTotalItems}</span>`:''}
-    </button>`;
+    </button>
+    <div style="flex:1"></div>
+    ${ST.tab==='tasks'?`
+    <button class="bulk-toggle-btn${isBulk?' active':''}" onclick="toggleBulkMode()" title="${isBulk?'Sortir de la selecció múltiple':'Selecció múltiple'}">
+      ${isBulk?'✕ Sortir':'☑ Selecció múltiple'}
+    </button>`:''}`;
 
   if(ST.tab==='tasks')renderTasks(tasks,client?.color);
   else if(ST.tab==='milestones')renderMilestones(ms);
@@ -2004,7 +2016,9 @@ function renderTasks(tasks,clrColor){
 
   // Bulk bar
   const bulkBar=isBulk&&bulkSel.size>0?`<div class="bulk-bar" id="bulk-bar">
-    <div class="bulk-count">${bulkSel.size} sel.</div><div class="bulk-sep"></div>
+    <div class="bulk-count">${bulkSel.size} sel.</div>
+    <button class="bulk-sel-all-btn" onclick="bulkSelectAll()" title="Seleccionar totes les tasques">⊠ Tots</button>
+    <div class="bulk-sep"></div>
     <div class="bulk-label">Resp.</div><input class="bulk-input" id="bulk-ass" placeholder="Nom...">
     <div class="bulk-label">Tècnics</div><input class="bulk-input" id="bulk-tech" placeholder="Noms...">
     <div class="bulk-label">Prioritat</div>
@@ -3086,6 +3100,29 @@ function bulkClear(){
   bulkSel=new Set;
   document.getElementById('content')?.classList.remove('bulk-mode');
   renderMain();
+}
+
+function bulkSelectAll(){
+  const tasks=D.tasks.filter(t=>t.projectId===ST.projectId);
+  tasks.forEach(t=>bulkSel.add(t.id));
+  renderMain();
+}
+
+function bulkDeleteSelected(){
+  if(!bulkSel.size){toast('No hi ha tasques seleccionades');return;}
+  const tasksToDelete=D.tasks.filter(t=>bulkSel.has(t.id));
+  const totalSubs=D.subtasks.filter(s=>bulkSel.has(s.taskId)).length;
+  const msg=`Eliminar ${bulkSel.size} tasca${bulkSel.size!==1?'s':''}${totalSubs?` i ${totalSubs} subtasca${totalSubs!==1?'s':''}`:''} seleccionada${bulkSel.size!==1?'s':''}?\n\nAquesta acció no es pot desfer.`;
+  if(!confirm(msg))return;
+  const snapshot={tasks:D.tasks.map(t=>({...t})),subtasks:D.subtasks.map(s=>({...s}))};
+  pushUndo(`Eliminació de ${bulkSel.size} tasques`,snapshot);
+  D.tasks=D.tasks.filter(t=>!bulkSel.has(t.id));
+  D.subtasks=D.subtasks.filter(s=>!bulkSel.has(s.taskId));
+  save();
+  bulkSel=new Set;
+  document.getElementById('content')?.classList.remove('bulk-mode');
+  renderMain();
+  toast(`🗑 ${tasksToDelete.length} tasques eliminades · ↩ Desfer`,true);
 }
 
 // ─── UNDO STACK ──────────────────────────────────────────────
