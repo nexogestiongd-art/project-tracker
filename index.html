@@ -696,8 +696,8 @@ body.ff-mono{font-family:'JetBrains Mono',monospace}
 .btn-tools .badge{position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--warn);border:2px solid var(--s0);display:none}
 .btn-tools .badge.show{display:block}
 /* SETTINGS MODAL */
-.stabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px}
-.stab{padding:9px 16px;font-size:12.5px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-family:'Outfit',sans-serif;margin-bottom:-1px;transition:all var(--t)}
+.stabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;padding-bottom:0}
+.stab{padding:9px 16px;font-size:12.5px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-family:'Outfit',sans-serif;margin-bottom:-1px;transition:all var(--t);white-space:nowrap;margin-bottom:-1px}
 .stab:hover{color:var(--text)}
 .stab.on{color:var(--accent);border-bottom-color:var(--accent)}
 .stab .sbadge{display:inline-flex;align-items:center;justify-content:center;background:var(--warn);border-radius:8px;font-size:9px;padding:1px 5px;margin-left:5px;color:#000;font-weight:700}
@@ -923,7 +923,7 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 
 <!-- SETTINGS MODAL -->
 <div class="overlay" id="modal-settings">
-  <div class="modal" style="width:560px">
+  <div class="modal" style="width:640px;max-width:96vw">
     <div class="modal-head">
       <div class="modal-title">⚙ Eines</div>
       <button class="modal-x" onclick="closeSettings()">✕</button>
