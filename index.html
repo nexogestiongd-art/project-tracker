@@ -903,6 +903,35 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 #pt-loader .ldot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:loaderPulse 1s infinite}
 @keyframes loaderFade{from{opacity:0;transform:translate(-50%,-5px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes loaderPulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── LOGIN GATE (blocking overlay) ── */
+#login-gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+#login-gate.hidden{display:none}
+.lg-card{max-width:440px;width:100%;background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:32px 36px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.lg-logo{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.lg-logo-dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
+.lg-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;letter-spacing:.5px}
+.lg-title{font-family:'Syne',sans-serif;font-weight:700;font-size:22px;color:#fff;margin-bottom:6px;line-height:1.3}
+.lg-subtitle{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+.lg-fr{margin-bottom:14px}
+.lg-fr label{display:block;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.lg-fr input{width:100%;background:var(--s0);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;padding:10px 13px;outline:none;transition:border-color var(--t)}
+.lg-fr input:focus{border-color:var(--accent)}
+.lg-fr input.mono{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.3px}
+.lg-status{font-size:12px;margin:10px 0;padding:9px 12px;border-radius:7px;display:none;line-height:1.5}
+.lg-status.show{display:block}
+.lg-status.loading{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa}
+.lg-status.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--g-done)}
+.lg-status.err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--p-high)}
+.lg-btn-row{display:flex;gap:10px;margin-top:18px}
+.lg-btn{flex:1;padding:11px 18px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all var(--t)}
+.lg-btn-prim{background:var(--accent);color:#fff}
+.lg-btn-prim:hover{opacity:.85;transform:translateY(-1px)}
+.lg-btn-prim:disabled{opacity:.45;cursor:wait;transform:none}
+.lg-btn-ghost{background:var(--s2);color:var(--muted);border:1px solid var(--border2)}
+.lg-btn-ghost:hover{background:var(--s3);color:var(--text)}
+.lg-help{font-size:11px;color:var(--dim);margin-top:18px;line-height:1.7;padding-top:14px;border-top:1px solid var(--border)}
+.lg-help code{font-family:'JetBrains Mono',monospace;background:var(--s2);padding:1px 5px;border-radius:3px;color:var(--muted);font-size:10.5px}
 </style>
 </head>
 <body>
@@ -975,6 +1004,31 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 </div>
 
 <div id="pt-loader"><span class="ldot"></span><span id="pt-loader-msg">Sincronitzant...</span></div>
+<div id="login-gate" class="hidden">
+  <div class="lg-card">
+    <div class="lg-logo">
+      <span class="lg-logo-dot"></span>
+      <span class="lg-logo-text">PROJECT TRACKER</span>
+    </div>
+    <div class="lg-title">Connecta't per començar</div>
+    <div class="lg-subtitle">Necessites la URL del backend i el teu token personal per accedir a les dades de l'equip.</div>
+    <div class="lg-fr">
+      <label>URL del backend</label>
+      <input type="text" id="lg-url" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="lg-fr">
+      <label>El teu token personal</label>
+      <input type="text" id="lg-token" class="mono" placeholder="Token de 28 caracters">
+    </div>
+    <div class="lg-status" id="lg-status"></div>
+    <div class="lg-btn-row">
+      <button class="lg-btn lg-btn-prim" id="lg-connect-btn" onclick="loginConnect()">Connectar</button>
+    </div>
+    <div class="lg-help">
+      🔑 No tens token? Demana-l al teu administrador (<code>nexogestiongd@gmail.com</code>). Quan facis el primer accés, el sistema marcarà el teu compte com a verificat.
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -1046,7 +1100,15 @@ async function gasRun(method, ...args) {
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
-    if (data.error) throw new Error(data.error);
+    if (data.error){
+      // Auto-detect token expiry and show login gate
+      if(/Token/i.test(data.error)){
+        clearBackendConfig();
+        showLoginGate();
+        lgStatus('err', '⚠ Sessió caducada o token invàlid. Torna a connectar.');
+      }
+      throw new Error(data.error);
+    }
     return typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
   } finally {
     if(showUI) hideLoader();
@@ -2085,8 +2147,9 @@ const SETTINGS_REGISTRY = [
   {id:'users',   label:'Usuaris',      icon:'👥', group:'Accés',    adminOnly:true,  render:renderUsersPanel},
   {id:'perms',   label:'Permisos',     icon:'🔐', group:'Accés',    adminOnly:true,  render:renderPermsPanel},
   {id:'import',  label:'Importar',     icon:'⬇',  group:'Dades',    adminOnly:true,  render:renderImportPanel},
-  {id:'export',  label:'Exportar',     icon:'⬆',  group:'Dades',    adminOnly:true,  render:renderExportPanel},
+  {id:'export',  label:'Exportar JSON', icon:'⬆',  group:'Dades',    adminOnly:true,  action:quickExport},
   {id:'visual',  label:'Visual',       icon:'🎨', group:'Aparença', adminOnly:false, render:renderVisualPanel},
+  {id:'audit',   label:'Audit log',    icon:'📜', group:'Sistema',  adminOnly:true,  render:renderAuditPanel},
   {id:'info',    label:'Info',         icon:'ℹ',  group:'Sistema',  adminOnly:false, render:renderInfoPanel},
   {id:'logout',  label:'Tancar sessió', icon:'⏻', group:'Sistema',  adminOnly:false, action:logout, danger:true},
 ];
@@ -2124,11 +2187,11 @@ function buildSettingsUI(){
   // Some render fns write to inner divs (#export-stats, #info-content, etc.)
   // Others write directly to the spanel — both patterns supported.
   const innerByPanel = {
-    'export': '<div class="stat-row" id="export-stats"></div><div class="fr" style="margin-top:14px"><label>JSON exportat</label><textarea class="textarea-mono" id="export-ta" readonly></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost" onclick="copyExport()">📋 Copiar</button><button class="btn btn-prim" onclick="downloadExport()">⬇ Descarregar</button></div>',
     'drive':  '<div id="drive-content"></div>',
     'users':  '<div id="users-content"></div>',
     'perms':  '<div id="perms-content"></div>',
     'visual': '<div id="visual-content"></div>',
+    'audit':  '<div id="audit-content"></div>',
     'info':   '<div id="info-content"></div>',
   };
   let panelsHtml = '';
@@ -2152,8 +2215,7 @@ function logout(){
   ST = {projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''}};
   D = {clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[]};
   renderAll();
-  // Show backend setup
-  setTimeout(()=>openBackendSetup(), 300);
+  showLoginGate();
   toast('Sessió tancada');
 }
 
@@ -2299,6 +2361,88 @@ function doImport(){
 }
 
 // ─── INFO ─────────────────────────────────────────────────────
+function renderAuditPanel(){
+  const el = document.getElementById('audit-content');
+  if(!el) return;
+  if(!isConnected()){
+    el.innerHTML = '<p style="color:var(--dim);font-size:13px">Connecta al backend per consultar el registre d\'audit.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="font-size:13px;color:var(--muted);flex:1;line-height:1.6">
+        Registre cronològic de tots els canvis (qui, què, quan).
+      </div>
+      <select id="audit-entity-filter" onchange="loadAuditLog()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 10px;outline:none">
+        <option value="">Totes les entitats</option>
+        <option value="client">Clients</option>
+        <option value="area">Àrees</option>
+        <option value="project">Projectes</option>
+        <option value="task">Tasques</option>
+        <option value="subtask">Subtasques</option>
+        <option value="milestone">Fites</option>
+        <option value="checklist">Checklists</option>
+      </select>
+      <select id="audit-limit" onchange="loadAuditLog()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 10px;outline:none">
+        <option value="50">Últimes 50</option>
+        <option value="100" selected>Últimes 100</option>
+        <option value="200">Últimes 200</option>
+      </select>
+      <button class="btn btn-ghost" onclick="loadAuditLog()" style="font-size:12px;padding:5px 14px">↻ Recarregar</button>
+    </div>
+    <div id="audit-list" style="background:var(--s0);border:1px solid var(--border);border-radius:8px;max-height:60vh;overflow-y:auto"></div>`;
+  loadAuditLog();
+}
+
+function loadAuditLog(){
+  const list = document.getElementById('audit-list');
+  if(!list) return;
+  list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">⏳ Carregant registre...</div>';
+  const limit = parseInt(document.getElementById('audit-limit')?.value || '100');
+  const filter = document.getElementById('audit-entity-filter')?.value || '';
+  gasRun('getAuditLog', limit, filter)
+    .then(function(json){
+      const entries = JSON.parse(json || '[]');
+      if(!entries.length){
+        list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--dim);font-size:13px">Encara no hi ha entrades al registre.</div>';
+        return;
+      }
+      const actionLabel = {create:'➕ Crear', update:'✎ Editar', 'delete':'🗑 Eliminar'};
+      const actionColor = {create:'var(--g-done)', update:'var(--warn)', 'delete':'var(--p-high)'};
+      const entityLabel = {client:'Client',area:'Àrea',project:'Projecte',task:'Tasca',subtask:'Subtasca',milestone:'Fita',checklist:'Checklist'};
+      list.innerHTML = entries.map(function(e){
+        const t = new Date(e.timestamp);
+        const tStr = t.toLocaleDateString('ca-ES',{day:'2-digit',month:'short',year:'2-digit'}) + ' ' + t.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'});
+        let detailsHtml = '';
+        if(e.details && typeof e.details === 'object'){
+          const fields = Object.keys(e.details);
+          if(fields.length){
+            detailsHtml = '<div style="margin-top:6px;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace;background:var(--s2);padding:6px 10px;border-radius:5px;line-height:1.6">'
+              + fields.map(function(k){
+                  const c = e.details[k];
+                  const from = c && c.from !== undefined ? String(c.from).slice(0,60) : '';
+                  const to = c && c.to !== undefined ? String(c.to).slice(0,60) : '';
+                  return '<div><strong style="color:var(--text)">'+esc(k)+'</strong>: <span style="color:var(--p-high)">'+esc(from)+'</span> → <span style="color:var(--g-done)">'+esc(to)+'</span></div>';
+                }).join('')
+              + '</div>';
+          }
+        }
+        return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12.5px">'
+          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          +   '<span style="color:'+actionColor[e.action]+';font-weight:600;font-size:11px;font-family:JetBrains Mono,monospace">'+(actionLabel[e.action]||e.action)+'</span>'
+          +   '<span style="color:var(--text);font-weight:500">'+esc(entityLabel[e.entity]||e.entity)+': '+esc(e.entityName||e.entityId||'—')+'</span>'
+          +   '<span style="color:var(--muted);font-size:11px;margin-left:auto">'+esc(e.userName||e.userEmail)+'</span>'
+          +   '<span style="color:var(--dim);font-size:11px;font-family:JetBrains Mono,monospace">'+esc(tStr)+'</span>'
+          + '</div>'
+          + detailsHtml
+          + '</div>';
+      }).join('');
+    })
+    .catch(function(err){
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--p-high);font-size:12px">Error: ' + esc(err.message) + '</div>';
+    });
+}
+
 function renderInfoPanel(){
   const raw=localStorage.getItem('pt3_d')||'{}';
   document.getElementById('info-content').innerHTML=`
@@ -4810,6 +4954,62 @@ function showBkStatus(type, msg) {
   el.style.cssText = 'font-size:12px;margin-top:6px;padding:8px 12px;border-radius:6px;display:block;' + styles[type];
 }
 
+function showLoginGate(){
+  const el = document.getElementById('login-gate');
+  if(el){
+    el.classList.remove('hidden');
+    // Pre-fill if we have existing values
+    const urlIn = document.getElementById('lg-url');
+    const tokIn = document.getElementById('lg-token');
+    if(urlIn && GAS_URL) urlIn.value = GAS_URL;
+    if(tokIn && GAS_TOKEN) tokIn.value = GAS_TOKEN;
+    setTimeout(()=>{ (urlIn?.value ? tokIn : urlIn)?.focus(); }, 100);
+  }
+}
+
+function hideLoginGate(){
+  const el = document.getElementById('login-gate');
+  if(el) el.classList.add('hidden');
+}
+
+function lgStatus(type, msg){
+  const el = document.getElementById('lg-status');
+  if(!el) return;
+  el.className = 'lg-status show ' + type;
+  el.textContent = msg;
+}
+
+async function loginConnect(){
+  const url = document.getElementById('lg-url')?.value.trim();
+  const token = document.getElementById('lg-token')?.value.trim();
+  if(!url || !token){ lgStatus('err', 'Omple URL i token'); return; }
+  const btn = document.getElementById('lg-connect-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Validant...'; }
+  lgStatus('loading', 'Validant credencials...');
+  try {
+    const result = await backendPing(url, token);
+    if(result.error){ throw new Error(result.error); }
+    if(!result.result || !result.result.user){ throw new Error('Resposta inesperada del backend'); }
+    saveBackendConfig(url, token);
+    CURRENT_USER = result.result.user;
+    lgStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
+    // Load data then unlock UI
+    setSyncState('syncing');
+    const dataJson = await gasRun('getData');
+    if(dataJson){
+      const p = JSON.parse(dataJson);
+      D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[] };
+      localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
+    }
+    setSyncState('synced');
+    if(result.result.firstLogin) setTimeout(()=>showFirstLoginWelcome(), 700);
+    setTimeout(()=>{ hideLoginGate(); renderAll(); }, 500);
+  } catch(err) {
+    lgStatus('err', '✗ ' + err.message);
+    if(btn){ btn.disabled = false; btn.textContent = 'Connectar'; }
+  }
+}
+
 function disconnectBackend() {
   if(!confirm('Desconnectar del backend? Les dades locals es conservaran.')) return;
   clearBackendConfig();
@@ -4945,12 +5145,14 @@ function _initApp() {
 
   if (isConnected()) {
     setSyncState('syncing');
-    // Validate connection: ping then load user + data
+    // Validate token before unlocking UI
     gasRun('ping')
       .then(json => {
         const p = JSON.parse(json);
         CURRENT_USER = p.user || p;
         if(p.firstLogin) setTimeout(()=>showFirstLoginWelcome(), 700);
+        // Token valid: ensure gate is hidden and continue loading
+        hideLoginGate();
         renderAll();
         return gasRun('getData');
       })
@@ -4969,16 +5171,21 @@ function _initApp() {
       .catch(err => {
         console.error('Backend error:', err);
         setSyncState('error');
-        toast('Error de connexió: ' + err.message);
-        // If token invalid, prompt to reconnect
-        if (/Token/i.test(err.message)) openBackendSetup();
+        // Token invalid or backend unreachable: BLOCK the UI behind the login gate
+        if(/Token/i.test(err.message) || /HTTP 4/.test(err.message)){
+          clearBackendConfig();
+          showLoginGate();
+          lgStatus('err', '⚠ Sessió caducada o token invàlid. Torna a connectar.');
+        } else {
+          // Network error — still block, but show retry-friendly message
+          showLoginGate();
+          lgStatus('err', '✗ ' + err.message);
+        }
       });
   } else {
+    // No credentials at all → block UI behind login gate
     setSyncState('local');
-    // First-time use: show backend setup
-    if (!localStorage.getItem('pt3_d') || !D.clients.length) {
-      setTimeout(()=>openBackendSetup(), 400);
-    }
+    showLoginGate();
   }
 }
 
