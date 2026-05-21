@@ -36,7 +36,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .tree-toggle{background:none;border:none;color:var(--muted);font-size:9px;cursor:pointer;padding:0 5px 0 0;transition:transform var(--t);line-height:1;flex-shrink:0}
 .tree-toggle.open{transform:rotate(90deg)}
 .tree-client-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:8px}
-.tree-client-name{font-size:13px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.tree-client-name{font-size:13px;font-weight:600;flex:0 1 auto;min-width:0;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .tree-node-actions{display:none;gap:2px;margin-left:4px;flex-shrink:0}
 .tree-client-row:hover .tree-node-actions,.tree-area-row:hover .tree-node-actions,.tree-project-row:hover .tree-node-actions{display:flex}
 .tna{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 3px;border-radius:3px;line-height:1;transition:all var(--t)}
@@ -49,7 +49,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .tree-area-row{display:flex;align-items:center;padding:6px 10px 6px 22px;cursor:pointer;transition:background var(--t)}
 .tree-area-row:hover{background:var(--s1)}
 .tree-area-icon{color:var(--dim);font-size:10px;margin-right:7px;flex-shrink:0}
-.tree-area-name{font-size:12px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.tree-area-name{font-size:12px;font-weight:500;flex:0 1 auto;min-width:0;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
 .tree-projects{display:none;padding-bottom:2px}
 .tree-projects.open{display:block}
 .tree-project-row{display:flex;align-items:center;padding:5px 10px 5px 40px;cursor:pointer;border-left:2px solid transparent;transition:background var(--t)}
@@ -95,7 +95,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 #no-sel p{font-size:12.5px;color:var(--dim)}
 
 .task-table-wrap{width:100%;overflow-x:auto;padding:0}
-.task-table{width:100%;border-collapse:separate;border-spacing:0 2px;table-layout:fixed}
+.task-table{width:100%;border-collapse:separate;border-spacing:0 2px;table-layout:auto}
 /* Header */
 .task-table thead th{
   padding:10px 10px 10px 8px;
@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
   border-bottom:2px solid var(--border);background:var(--bg)
 }
 .task-table thead th.th-sm{width:26px;padding:10px 4px;text-align:center}
-.task-table thead th.th-task{width:auto}
+.task-table thead th.th-task{width:auto;min-width:120px}
 .task-table thead th.th-status{width:110px}
 .task-table thead th.th-prio{width:88px}
 .task-table thead th.th-dl{width:110px}
@@ -896,7 +896,8 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 
 .snav-export-btn{color:var(--accent)!important;font-weight:600!important}
 .snav-export-btn:hover{background:rgba(167,139,250,.15)!important}
-</style>
+
+.tree-row-spacer{flex:1;min-height:22px;cursor:pointer}</style>
 </head>
 <body>
 
@@ -1784,6 +1785,7 @@ function renderSidebar(){
           <button class="tree-toggle${aOpen?' open':''}" onclick="event.stopPropagation();xArea('${ar.id}')">▶</button>
           <span class="tree-area-icon" onclick="selArea('${ar.id}');event.stopPropagation()" style="cursor:pointer">⊞</span>
           <span class="tree-area-name" onclick="selArea('${ar.id}');event.stopPropagation()" style="cursor:pointer${ST.areaId===ar.id&&!ST.projectId?';color:var(--text)':''}">${esc(ar.name)}</span>
+          <div class="tree-row-spacer"></div>
           <div class="tree-node-actions">
             <button class="tna" onclick="openModal('project',null,'${ar.id}')" title="Nou projecte">＋</button>
             <button class="tna" onclick="openModal('area','${ar.id}',null)" title="Editar">✎</button>
@@ -1801,6 +1803,7 @@ function renderSidebar(){
           ${cl.avatar?`<img class="cl-avatar" src="${cl.avatar}">`:''}
         </div>
         <div class="tree-client-name" onclick="selClient('${cl.id}');event.stopPropagation()" style="cursor:pointer">${esc(cl.name)}</div>
+        <div class="tree-row-spacer"></div>
         <div class="tree-count">${done}/${total}</div>
         <div class="tree-node-actions">
           <button class="tna" onclick="event.stopPropagation();openModal('area',null,'${cl.id}')" title="Nova àrea">＋</button>
