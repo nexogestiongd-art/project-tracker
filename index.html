@@ -1004,7 +1004,7 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 </div>
 
 <div id="pt-loader"><span class="ldot"></span><span id="pt-loader-msg">Sincronitzant...</span></div>
-<div id="login-gate" class="hidden">
+<div id="login-gate">
   <div class="lg-card">
     <div class="lg-logo">
       <span class="lg-logo-dot"></span>
@@ -1025,7 +1025,7 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
       <button class="lg-btn lg-btn-prim" id="lg-connect-btn" onclick="loginConnect()">Connectar</button>
     </div>
     <div class="lg-help">
-      🔑 No tens token? Demana-l al teu administrador (<code>nexogestiongd@gmail.com</code>). Quan facis el primer accés, el sistema marcarà el teu compte com a verificat.
+      🔑 No tens token? Demana-l al teu administrador. Quan facis el primer accés, el sistema marcarà el teu compte com a verificat.
     </div>
   </div>
 </div>
@@ -1047,7 +1047,7 @@ try {
 
 // User info — set after successful ping; defaults for first load
 let CURRENT_USER = { email: '', role: 'admin', name: 'Local' };
-const PT_CONFIG = { ADMIN_EMAIL: 'nexogestiongd@gmail.com' };
+const PT_CONFIG = { ADMIN_EMAIL: '' };  // populated from backend ping response
 
 function isConnected() { return !!GAS_URL && !!GAS_TOKEN; }
 function isAdmin()     { return !isConnected() || CURRENT_USER.role === 'admin'; }
@@ -1368,20 +1368,62 @@ async function manualSync(){
   }
 }
 
-function save(){
-  const payload=JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()});
-  localStorage.setItem('pt3_d',payload);
-  localStorage.setItem('pt3_s',JSON.stringify({
-    projectId:ST.projectId,tab:ST.tab,
-    xClients:[...ST.xClients],xAreas:[...ST.xAreas]
-  }));
-  if(isConnected()){
-    setSyncState('pending');
-    gasRun('saveData',payload)
-      .then(()=>setSyncState('synced'))
-      .catch(e=>{setSyncState('error');console.error('Backend save error:',e);});
-  }
+// ── DEBOUNCED BACKEND SAVE ────────────────────────────────────
+let _saveTimer = null;
+let _savePendingPayload = null;
+const SAVE_DEBOUNCE_MS = 1500;
+
+function _flushBackendSave(){
+  if(!_savePendingPayload || !isConnected()) return;
+  const payload = _savePendingPayload;
+  _savePendingPayload = null;
+  setSyncState('syncing');
+  // gasRun shows its own loader; suppress it here to avoid flicker
+  // (gasRun already detects activeRequests, but saveData specifically skips loader)
+  gasRun('saveData', payload)
+    .then(()=> setSyncState('synced'))
+    .catch(e => {
+      setSyncState('error');
+      console.error('Backend save error:', e);
+      // On failure, re-queue if nothing newer is pending
+      if(!_savePendingPayload) _savePendingPayload = payload;
+    });
 }
+
+function flushSaveNow(){
+  if(_saveTimer){ clearTimeout(_saveTimer); _saveTimer = null; }
+  _flushBackendSave();
+}
+
+function save(){
+  // Guard: only persist when there's an active session.
+  // Prevents orphaned localStorage writes after logout/token expiry.
+  if(!isConnected()) return;
+  const payload = JSON.stringify({...D, _v:SCHEMA_VER, _savedAt:Date.now()});
+  // 1. Local cache (used as fast first-paint after successful auth)
+  localStorage.setItem('pt3_d', payload);
+  localStorage.setItem('pt3_s', JSON.stringify({
+    projectId: ST.projectId, tab: ST.tab,
+    xClients: [...ST.xClients], xAreas: [...ST.xAreas]
+  }));
+  // 2. Debounced backend save
+  _savePendingPayload = payload;
+  setSyncState('pending');
+  if(_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(_flushBackendSave, SAVE_DEBOUNCE_MS);
+}
+
+// Flush pending save on tab close to avoid losing data
+window.addEventListener('beforeunload', function(e){
+  if(_savePendingPayload && isConnected()){
+    // Best effort: use sendBeacon if available
+    try {
+      const body = JSON.stringify({ token: GAS_TOKEN, method: 'saveData', args: [_savePendingPayload] });
+      const blob = new Blob([body], { type: 'text/plain;charset=utf-8' });
+      navigator.sendBeacon(GAS_URL, blob);
+    } catch(err){}
+  }
+});
 
 function load(){
   try{
@@ -1690,11 +1732,91 @@ function delMS(id){
 }
 
 // ─── STATUS CYCLES ───────────────────────────────────────────
-function cycleTask(id){const t=D.tasks.find(x=>x.id===id);if(!t)return;t.status=TASK_STATUSES[(TASK_STATUSES.indexOf(t.status)+1)%TASK_STATUSES.length];save();renderMain()}
-function cycleSub(id){const s=D.subtasks.find(x=>x.id===id);if(!s)return;s.status=TASK_STATUSES[(TASK_STATUSES.indexOf(s.status)+1)%TASK_STATUSES.length];save();renderMain()}
+// ── INCREMENTAL DOM UPDATES (avoid full re-render on status toggle) ──
+function _updateTaskRowDOM(task){
+  // Only valid when we're showing this project's tasks list
+  if(ST.view !== 'project' || ST.tab !== 'tasks' || task.projectId !== ST.projectId) return false;
+  const row = document.querySelector(`tr.task-tr[data-task-id="${task.id}"]`);
+  if(!row) return false;
+  // Update done state styling
+  row.classList.toggle('is-done', task.status === 'fet');
+  // Update check box
+  const chk = row.querySelector('.chk-box');
+  if(chk) chk.classList.toggle('chk', task.status === 'fet');
+  // Update status badge
+  const badge = row.querySelector('.st-badge');
+  if(badge){
+    badge.className = `st-badge st-${task.status}`;
+    badge.textContent = stLabel[task.status];
+  }
+  // Update overall progress bar in topbar
+  _updateProjectProgress();
+  return true;
+}
+
+function _updateSubRowDOM(sub){
+  if(ST.view !== 'project' || ST.tab !== 'tasks') return false;
+  const row = document.querySelector(`tr.sub-tr[data-sub-id="${sub.id}"]`);
+  if(!row) return false;
+  row.classList.toggle('is-done', sub.status === 'fet');
+  const chk = row.querySelector('.chk-box');
+  if(chk) chk.classList.toggle('chk', sub.status === 'fet');
+  const badge = row.querySelector('.st-badge');
+  if(badge){
+    badge.className = `st-badge st-${sub.status}`;
+    badge.textContent = stLabel[sub.status];
+  }
+  // Update parent task subtask count text
+  const parentRow = document.querySelector(`tr.task-tr[data-task-id="${sub.taskId}"]`);
+  if(parentRow){
+    const subs = D.subtasks.filter(s => s.taskId === sub.taskId);
+    const sdone = subs.filter(s => s.status === 'fet').length;
+    const countEl = parentRow.querySelector('.tn-sub-count');
+    if(countEl && subs.length) countEl.textContent = `${sdone}/${subs.length} subtasques`;
+  }
+  return true;
+}
+
+function _updateProjectProgress(){
+  if(!ST.projectId) return;
+  const tasks = D.tasks.filter(t => t.projectId === ST.projectId);
+  const done = tasks.filter(t => t.status === 'fet').length;
+  const pct = tasks.length ? Math.round(done/tasks.length * 100) : 0;
+  const fill = document.querySelector('.progress-fill');
+  const lbl = document.querySelector('.progress-pct');
+  if(fill) fill.style.width = pct + '%';
+  if(lbl) lbl.textContent = `${pct}% · ${done}/${tasks.length} tasques`;
+}
+
+function cycleTask(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  t.status = TASK_STATUSES[(TASK_STATUSES.indexOf(t.status)+1)%TASK_STATUSES.length];
+  audit(t,true);
+  save();
+  if(!_updateTaskRowDOM(t)) renderMain();
+}
+function cycleSub(id){
+  const s=D.subtasks.find(x=>x.id===id);if(!s)return;
+  s.status = TASK_STATUSES[(TASK_STATUSES.indexOf(s.status)+1)%TASK_STATUSES.length];
+  audit(s,true);
+  save();
+  if(!_updateSubRowDOM(s)) renderMain();
+}
 function cycleMS(id){const m=D.milestones.find(x=>x.id===id);if(!m)return;m.status=MS_STATUSES[(MS_STATUSES.indexOf(m.status)+1)%MS_STATUSES.length];save();renderMain()}
-function toggleTask(id){const t=D.tasks.find(x=>x.id===id);if(!t)return;t.status=t.status==='fet'?'pendent':'fet';save();renderMain()}
-function toggleSub(id){const s=D.subtasks.find(x=>x.id===id);if(!s)return;s.status=s.status==='fet'?'pendent':'fet';save();renderMain()}
+function toggleTask(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  t.status = t.status==='fet' ? 'pendent' : 'fet';
+  audit(t,true);
+  save();
+  if(!_updateTaskRowDOM(t)) renderMain();
+}
+function toggleSub(id){
+  const s=D.subtasks.find(x=>x.id===id);if(!s)return;
+  s.status = s.status==='fet' ? 'pendent' : 'fet';
+  audit(s,true);
+  save();
+  if(!_updateSubRowDOM(s)) renderMain();
+}
 function xTask(id){
   const isOpen=ST.xTasks.has(id);
   if(isOpen)ST.xTasks.delete(id);else ST.xTasks.add(id);
@@ -2208,13 +2330,21 @@ function buildSettingsUI(){
 // ═══════════════════════════════════════════════════════════
 function logout(){
   if(!confirm('Tancar sessió? Es desconnectarà del backend i tornaràs a la pantalla d\'inici.')) return;
+  // Cancel any pending save
+  if(_saveTimer){ clearTimeout(_saveTimer); _saveTimer = null; _savePendingPayload = null; }
+  // Clear backend config + ALL local cache
   clearBackendConfig();
+  try {
+    localStorage.removeItem('pt3_d');
+    localStorage.removeItem('pt3_s');
+    localStorage.removeItem('pt_audit_pending');
+  } catch(e){}
   setSyncState('local');
   closeSettings();
-  // Clear local UI state to avoid stale data display
+  // Reset in-memory state
   ST = {projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''}};
   D = {clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[]};
-  renderAll();
+  // Show gate (BLOCKS UI)
   showLoginGate();
   toast('Sessió tancada');
 }
@@ -4723,7 +4853,7 @@ function renderDriveSettings(){
       <div style="font-size:13px;color:var(--g-done);font-weight:600;margin-bottom:6px">✓ Drive gestionat pel backend</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7">
         Les carpetes i adjunts es creen automàticament al Drive de l'administrador
-        (<code>${esc(PT_CONFIG ? PT_CONFIG.ADMIN_EMAIL : 'nexogestiongd@gmail.com')}</code>) i
+        (<code>${esc(PT_CONFIG.ADMIN_EMAIL || 'l\'administrador')}</code>) i
         es comparteixen amb els usuaris del tracker.
       </div>
     </div>
@@ -4762,8 +4892,8 @@ function renderUsersPanel(){
               <div style="font-size:12.5px;font-weight:500;color:var(--text)">${esc(u.name||u.email)}</div>
               <div style="font-size:11px;color:var(--muted)">${esc(u.email)}</div>
             </div>
-            <span style="font-size:10px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;background:${u.role==='admin'?'rgba(167,139,250,.15)':'rgba(52,211,153,.1)'};color:${u.role==='admin'?'var(--accent)':'var(--g-done)'}">${u.role}</span> ${!u.verified&&u.email!=='nexogestiongd@gmail.com'?'<span style=\"font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(251,191,36,.12);color:var(--g-pend);font-family:JetBrains Mono,monospace\">⏳ no verificat</span>':''}
-            ${(!u.verified&&u.email!==PT_CONFIG.ADMIN_EMAIL)?`<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(251,191,36,.12);color:var(--g-pend);font-family:'JetBrains Mono',monospace">⏳ no verificat</span>`:''} ${u.email.toLowerCase()!=='nexogestiongd@gmail.com'?`<button class="ta del" onclick="deleteUserGAS('${u.email}')" title="Eliminar accés">✕</button>`:''}
+            <span style="font-size:10px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;background:${u.role==='admin'?'rgba(167,139,250,.15)':'rgba(52,211,153,.1)'};color:${u.role==='admin'?'var(--accent)':'var(--g-done)'}">${u.role}</span> ${!u.verified&&u.email!==PT_CONFIG.ADMIN_EMAIL?'<span style=\"font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(251,191,36,.12);color:var(--g-pend);font-family:JetBrains Mono,monospace\">⏳ no verificat</span>':''}
+            ${(!u.verified&&u.email!==PT_CONFIG.ADMIN_EMAIL)?`<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(251,191,36,.12);color:var(--g-pend);font-family:'JetBrains Mono',monospace">⏳ no verificat</span>`:''} ${u.email.toLowerCase()!==(PT_CONFIG.ADMIN_EMAIL||'').toLowerCase()?`<button class="ta del" onclick="deleteUserGAS('${u.email}')" title="Eliminar accés">✕</button>`:''}
           </div>`).join(''):'<div style="color:var(--dim);font-size:12px;padding:8px">Sense usuaris addicionals</div>'}
       </div>
       <div class="fr">
@@ -4916,6 +5046,7 @@ function openBackendSetup() {
       }
       saveBackendConfig(url, token);
       CURRENT_USER = result.result.user;
+      if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
       showBkStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
       setTimeout(()=> {
         closeModal();
@@ -4986,28 +5117,35 @@ async function loginConnect(){
   const btn = document.getElementById('lg-connect-btn');
   if(btn){ btn.disabled = true; btn.textContent = 'Validant...'; }
   lgStatus('loading', 'Validant credencials...');
-  try {
-    const result = await backendPing(url, token);
-    if(result.error){ throw new Error(result.error); }
-    if(!result.result || !result.result.user){ throw new Error('Resposta inesperada del backend'); }
-    saveBackendConfig(url, token);
-    CURRENT_USER = result.result.user;
-    lgStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
-    // Load data then unlock UI
-    setSyncState('syncing');
-    const dataJson = await gasRun('getData');
-    if(dataJson){
-      const p = JSON.parse(dataJson);
-      D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[] };
-      localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
-    }
-    setSyncState('synced');
-    if(result.result.firstLogin) setTimeout(()=>showFirstLoginWelcome(), 700);
-    setTimeout(()=>{ hideLoginGate(); renderAll(); }, 500);
-  } catch(err) {
-    lgStatus('err', '✗ ' + err.message);
-    if(btn){ btn.disabled = false; btn.textContent = 'Connectar'; }
-  }
+  backendPing(url, token)
+    .then(result => {
+      if(result.error) throw new Error(result.error);
+      if(!result.result || !result.result.user) throw new Error('Resposta inesperada del backend');
+      saveBackendConfig(url, token);
+      CURRENT_USER = result.result.user;
+      if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
+      lgStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
+      setTimeout(()=>{
+        hideLoginGate();
+        load(); autoMigrateV1(); applyColWidths(); checkMigrationBadge();
+        renderAll();
+        setSyncState('syncing');
+        gasRun('getData').then(dataJson => {
+          if(dataJson){
+            const p = JSON.parse(dataJson);
+            D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[] };
+            localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
+          }
+          setSyncState('synced');
+          renderAll();
+          if(result.result.firstLogin) setTimeout(()=>showFirstLoginWelcome(), 400);
+        });
+      }, 600);
+    })
+    .catch(err => {
+      if(btn){ btn.disabled = false; btn.textContent = 'Connectar'; }
+      lgStatus('err','✗ ' + err.message);
+    });
 }
 
 function disconnectBackend() {
@@ -5137,11 +5275,12 @@ function _initApp() {
   const mSettings = document.getElementById('modal-settings');
   if(mSettings) mSettings.addEventListener('click', e=>{ if(e.target.id==='modal-settings') closeSettings(); });
 
-  // Local init (fast, from localStorage)
-  load(); vsLoad(); autoMigrateV1();
-  applyColWidths(); checkMigrationBadge(); initSidebarResize();
+  // Apply visual settings + sidebar resize (safe behind gate)
+  vsLoad();
+  initSidebarResize();
 
-  renderAll(); // render immediately with cached data
+  // Login gate visible by default — only hidden after successful auth.
+  // DO NOT call renderAll() or load() until session is validated.
 
   if (isConnected()) {
     setSyncState('syncing');
@@ -5150,9 +5289,11 @@ function _initApp() {
       .then(json => {
         const p = JSON.parse(json);
         CURRENT_USER = p.user || p;
+        if(p.adminEmail) PT_CONFIG.ADMIN_EMAIL = p.adminEmail;
         if(p.firstLogin) setTimeout(()=>showFirstLoginWelcome(), 700);
-        // Token valid: ensure gate is hidden and continue loading
+        // Token valid → unlock UI, load local cache for fast paint, then fetch fresh
         hideLoginGate();
+        load(); autoMigrateV1(); applyColWidths(); checkMigrationBadge();
         renderAll();
         return gasRun('getData');
       })
