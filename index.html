@@ -1714,14 +1714,14 @@ function xArea(id){
   save();renderSidebar();
 }
 function selArea(id){
-  // Navigate to area overview
   ST.areaId=id;ST.clientId=null;ST.projectId=null;ST.view='area';
-  ST.xAreas.add(id); // auto-expand
+  ST.xAreas.add(id);
+  ST.xTasks=new Set;
   save();renderSidebar();renderMain();
 }
-function selProject(id){ST.projectId=id;ST.clientId=null;ST.areaId=null;ST.view='project';ST.tab='tasks';ST.activeClId=null;save();renderSidebar();renderMain()}
-function selClient(id){ST.clientId=id;ST.projectId=null;ST.areaId=null;ST.view='client';ST.xClients.add(id);save();renderSidebar();renderMain()}
-function openDashboard(){ST.view='dashboard';ST.projectId=null;ST.clientId=null;ST.areaId=null;save();renderSidebar();renderMain();}
+function selProject(id){ST.projectId=id;ST.clientId=null;ST.areaId=null;ST.view='project';ST.tab='tasks';ST.activeClId=null;ST.xTasks=new Set;save();renderSidebar();renderMain()}
+function selClient(id){ST.clientId=id;ST.projectId=null;ST.areaId=null;ST.view='client';ST.xClients.add(id);ST.xTasks=new Set;save();renderSidebar();renderMain()}
+function openDashboard(){ST.view='dashboard';ST.projectId=null;ST.clientId=null;ST.areaId=null;ST.xTasks=new Set;save();renderSidebar();renderMain();}
 
 // ─── RENDER SIDEBAR ──────────────────────────────────────────
 function renderSidebar(){
@@ -1780,10 +1780,10 @@ function renderSidebar(){
         </div>`;
       }).join('');
       return`<div class="tree-area">
-        <div class="tree-area-row" onclick="treeRowToggle(event,'area','${ar.id}')">
+        <div class="tree-area-row" onclick="xArea('${ar.id}')">
           <button class="tree-toggle${aOpen?' open':''}" onclick="event.stopPropagation();xArea('${ar.id}')">▶</button>
-          <span class="tree-area-icon" onclick="selArea('${ar.id}')" style="cursor:pointer">⊞</span>
-          <span class="tree-area-name" onclick="selArea('${ar.id}')" style="cursor:pointer${ST.areaId===ar.id&&!ST.projectId?';color:var(--text)':''}">${esc(ar.name)}</span>
+          <span class="tree-area-icon" onclick="selArea('${ar.id}');event.stopPropagation()" style="cursor:pointer">⊞</span>
+          <span class="tree-area-name" onclick="selArea('${ar.id}');event.stopPropagation()" style="cursor:pointer${ST.areaId===ar.id&&!ST.projectId?';color:var(--text)':''}">${esc(ar.name)}</span>
           <div class="tree-node-actions">
             <button class="tna" onclick="openModal('project',null,'${ar.id}')" title="Nou projecte">＋</button>
             <button class="tna" onclick="openModal('area','${ar.id}',null)" title="Editar">✎</button>
@@ -1795,12 +1795,12 @@ function renderSidebar(){
     }).join('');
 
     return`<div class="tree-client">
-      <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="treeRowToggle(event,'client','${cl.id}')">
+      <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="xClient('${cl.id}')">
         <button class="tree-toggle${isOpen?' open':''}" onclick="event.stopPropagation();xClient('${cl.id}')">▶</button>
-        <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}')" style="cursor:pointer">
+        <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}');event.stopPropagation()" style="cursor:pointer">
           ${cl.avatar?`<img class="cl-avatar" src="${cl.avatar}">`:''}
         </div>
-        <div class="tree-client-name" onclick="selClient('${cl.id}')" style="cursor:pointer">${esc(cl.name)}</div>
+        <div class="tree-client-name" onclick="selClient('${cl.id}');event.stopPropagation()" style="cursor:pointer">${esc(cl.name)}</div>
         <div class="tree-count">${done}/${total}</div>
         <div class="tree-node-actions">
           <button class="tna" onclick="event.stopPropagation();openModal('area',null,'${cl.id}')" title="Nova àrea">＋</button>
