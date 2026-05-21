@@ -95,7 +95,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 #no-sel p{font-size:12.5px;color:var(--dim)}
 
 .task-table-wrap{width:100%;overflow-x:auto;padding:0}
-.task-table{width:100%;border-collapse:separate;border-spacing:0 2px;table-layout:auto}
+.task-table{width:100%;border-collapse:separate;border-spacing:0 2px;table-layout:fixed}
 /* Header */
 .task-table thead th{
   padding:10px 10px 10px 8px;
@@ -173,7 +173,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .task-table tbody tr.drag-over-bot > td{border-bottom:2px solid var(--accent)!important}
 .task-table tbody tr.dragging{opacity:.35}
 /* Name col */
-.task-table .td-name{white-space:normal;overflow:visible}
+.task-table .td-name{white-space:normal;overflow:hidden;min-width:0;word-break:break-word}
 .task-row.is-done .tn-text{text-decoration:line-through;color:var(--muted)}
 /* drag states */
 .task-wrap.dragging{opacity:.4}
@@ -196,8 +196,8 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .chk-box.chk::after{content:'✓';font-size:10px;color:#000;font-weight:800}
 
 .task-name-cell{cursor:pointer;overflow:hidden}
-.tn-text{font-size:13.5px;font-weight:500;line-height:1.3;display:block}
-.tn-notes{font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tn-text{font-size:13.5px;font-weight:500;line-height:1.3;display:block;word-break:break-word;overflow-wrap:anywhere}
+.tn-notes{font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;word-break:break-word;overflow-wrap:anywhere}
 .tn-sub-count{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:2px;display:block}
 
 .st-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Outfit',sans-serif;transition:opacity var(--t);white-space:nowrap}
@@ -379,7 +379,7 @@ body.is-dragging-task .tree-client-children{display:block!important}
 .cl-list-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .cl-list-header h3{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff;flex:1}
 .cl-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;cursor:pointer;transition:all var(--t);display:flex;align-items:center;gap:14px}
-.cl-card:hover{background:var(--s2);border-color:var(--border2);transform:translateY(-1px)}
+.cl-card:hover{background:var(--s2);border-color:var(--border2)}
 .cl-card-icon{font-size:22px;flex-shrink:0}
 .cl-card-info{flex:1;min-width:0}
 .cl-card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -648,11 +648,11 @@ body.ff-mono{font-family:'JetBrains Mono',monospace}
 .db-client-issues{margin-top:8px;font-size:11px;color:var(--p-high);display:flex;flex-wrap:wrap;gap:6px}
 .db-issue-pill{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);padding:2px 8px;border-radius:10px}
 /* GANTT */
-.gantt-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.gantt-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-height:calc(100vh - 280px);display:flex;flex-direction:column}
 .gantt-controls{display:flex;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .gantt-zoom-btn{background:var(--s2);border:1px solid var(--border2);color:var(--muted);padding:4px 11px;border-radius:6px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all var(--t)}
 .gantt-zoom-btn:hover,.gantt-zoom-btn.on{background:var(--s3);color:var(--text);border-color:var(--accent)}
-.gantt-scroll{overflow-x:auto;overflow-y:visible}
+.gantt-scroll{overflow:auto;flex:1;min-height:0}
 .gantt-grid{position:relative}
 .gantt-header{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--s1);z-index:2}
 .gantt-label-col{width:200px;min-width:200px;flex-shrink:0;padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);border-right:1px solid var(--border)}
@@ -1551,14 +1551,15 @@ function getModalContent(type,id,parentId){
               <div><label>Data d'inici ${inheritStart&&!ex?.startDate?'<span style="color:var(--dim);font-size:9px">(heretada)</span>':''}</label><input type="date" id="f-start" value="${inheritStart}"></div>
               <div><label>Data límit ${inheritEnd&&!ex?.deadline?'<span style="color:var(--dim);font-size:9px">(heretada)</span>':''}</label><input type="date" id="f-dl" value="${inheritEnd}"></div>
             </div>
-            <div class="fr"><label>Tècnic executor <span style="color:var(--dim);font-size:9px">(executa aquesta subtasca)</span></label><input type="text" id="f-ass" value="${E('assignee')}" placeholder="${defaultExec?`Per defecte: ${defaultExec}`:'Nom o inicials...'}"></div>`;
+            <div class="fr"><label>Tècnic executor <span style="color:var(--dim);font-size:9px">(executa aquesta subtasca)</span></label><input type="text" id="f-ass" value="${E('assignee')}" placeholder="${defaultExec?`Per defecte: ${defaultExec}`:'Nom o inicials...'}"></div>
+            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>`;
       })(),
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const parentTask=ex?D.tasks.find(t=>t.id===ex.taskId):D.tasks.find(t=>t.id===parentId);
         const proj=parentTask?D.projects.find(p=>p.id===parentTask.projectId):null;
         const exec=document.getElementById('f-ass').value.trim()||(proj?.manager||parentTask?.assignee||'');
-        const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec};
+        const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec,notes:document.getElementById('f-notes').value.trim()};
         if(id){Object.assign(D.subtasks.find(s=>s.id===id),fd);toast('Subtasca actualitzada')}
         else{const s={id:uid(),taskId:parentId,...fd};D.subtasks.push(s);ST.xTasks.add(parentId);toast('Subtasca creada ✓')}
         save();closeModal();renderMain();
@@ -1685,6 +1686,21 @@ function xTask(id){
 }
 
 // ─── SIDEBAR TOGGLES ─────────────────────────────────────────
+
+// Toggle expand/collapse when clicking the row (but not on actionable children)
+function treeRowToggle(e, type, id){
+  // Ignore clicks on buttons, links, inputs and named clickable spans
+  const t = e.target;
+  if(t.closest('.tree-toggle')) return;
+  if(t.closest('.tna')) return;
+  if(t.closest('.cl-avatar-wrap')) return;
+  if(t.closest('.tree-client-name')) return;
+  if(t.closest('.tree-area-name')) return;
+  if(t.closest('.tree-area-icon')) return;
+  e.stopPropagation();
+  if(type==='client') xClient(id);
+  else if(type==='area') xArea(id);
+}
 function xClient(id){if(ST.xClients.has(id))ST.xClients.delete(id);else ST.xClients.add(id);save();renderSidebar()}
 function xArea(id){
   // Only toggle expand/collapse — does NOT navigate
@@ -1726,16 +1742,21 @@ function renderSidebar(){
     el.innerHTML='<div style="padding:20px 18px;font-size:12px;color:var(--dim);text-align:center">Crea el primer client</div>';
     return;
   }
-  el.innerHTML=D.clients.map(cl=>{
+  const sortedClients=sbSortAlpha?[...D.clients].sort((a,b)=>a.name.localeCompare(b.name,'ca')):D.clients;
+  el.innerHTML=sortedClients.map(cl=>{
     const isOpen=ST.xClients.has(cl.id);
     const aIds=D.areas.filter(a=>a.clientId===cl.id).map(a=>a.id);
     const pIds=D.projects.filter(p=>aIds.includes(p.areaId)).map(p=>p.id);
     const total=D.tasks.filter(t=>pIds.includes(t.projectId)).length;
     const done=D.tasks.filter(t=>pIds.includes(t.projectId)&&t.status==='fet').length;
 
-    const areasHtml=D.areas.filter(a=>a.clientId===cl.id).map(ar=>{
+    const _areas=D.areas.filter(a=>a.clientId===cl.id);
+      const _sortedAreas=sbSortAlpha?[..._areas].sort((a,b)=>a.name.localeCompare(b.name,'ca')):_areas;
+      const areasHtml=_sortedAreas.map(ar=>{
       const aOpen=ST.xAreas.has(ar.id);
-      const projsHtml=D.projects.filter(p=>p.areaId===ar.id).map(pr=>{
+      const _projs=D.projects.filter(p=>p.areaId===ar.id);
+        const _sortedProjs=sbSortAlpha?[..._projs].sort((a,b)=>a.name.localeCompare(b.name,'ca')):_projs;
+        const projsHtml=_sortedProjs.map(pr=>{
         const isActive=ST.projectId===pr.id;
         const ptotal=D.tasks.filter(t=>t.projectId===pr.id).length;
         return`<div class="tree-project-row${isActive?' active':''}"
@@ -1753,8 +1774,8 @@ function renderSidebar(){
         </div>`;
       }).join('');
       return`<div class="tree-area">
-        <div class="tree-area-row">
-          <button class="tree-toggle${aOpen?' open':''}" onclick="xArea('${ar.id}')">▶</button>
+        <div class="tree-area-row" onclick="treeRowToggle(event,'area','${ar.id}')">
+          <button class="tree-toggle${aOpen?' open':''}" onclick="event.stopPropagation();xArea('${ar.id}')">▶</button>
           <span class="tree-area-icon" onclick="selArea('${ar.id}')" style="cursor:pointer">⊞</span>
           <span class="tree-area-name" onclick="selArea('${ar.id}')" style="cursor:pointer${ST.areaId===ar.id&&!ST.projectId?';color:var(--text)':''}">${esc(ar.name)}</span>
           <div class="tree-node-actions">
@@ -1768,8 +1789,8 @@ function renderSidebar(){
     }).join('');
 
     return`<div class="tree-client">
-      <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}">
-        <button class="tree-toggle${isOpen?' open':''}" onclick="xClient('${cl.id}')">▶</button>
+      <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="treeRowToggle(event,'client','${cl.id}')">
+        <button class="tree-toggle${isOpen?' open':''}" onclick="event.stopPropagation();xClient('${cl.id}')">▶</button>
         <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}')" style="cursor:pointer">
           ${cl.avatar?`<img class="cl-avatar" src="${cl.avatar}">`:''}
         </div>
@@ -2010,7 +2031,10 @@ function renderTasks(tasks,clrColor){
         <td></td>
         <td></td>
         <td style="text-align:center"><div class="chk-box${sub.status==='fet'?' chk':''}" onclick="toggleSub('${sub.id}')"></div></td>
-        <td class="sub-name-td td-name" onclick="openModal('subtask','${sub.id}',null)" style="cursor:pointer">${esc(sub.name)}</td>
+        <td class="sub-name-td td-name" onclick="openModal('subtask','${sub.id}',null)" style="cursor:pointer">
+            <div class="tn-text">${esc(sub.name)}</div>
+            ${sub.notes?`<div class="tn-notes">${esc(sub.notes)}</div>`:''}
+          </td>
         ${HC.status?'':`<td><button class="st-badge st-${sub.status}" onclick="cycleSub('${sub.id}')">${stLabel[sub.status]}</button></td>`}
         ${HC.prio?'':`<td></td>`}
         ${HC.dl?'':`<td class="cell-date${sOver?' overdue':''}">${sOver?'⚠ ':''}${fmtDate(sEffDl)}${sEffDl&&!sub.deadline?' <span style="color:var(--dim)">↑</span>':''}</td>`}
@@ -3218,7 +3242,91 @@ function onDragOverSidebarProject(e,targetProjectId){
 function onDragLeaveSidebarProject(e,targetProjectId){
   document.getElementById(`sbproj-${targetProjectId}`)?.classList.remove('drop-target-hover');
 }
-// DASHBOARD
+
+// ─── DROP HANDLERS (added v1.0.x) ───────────────────────────
+function onDragEnd(){
+  document.querySelectorAll('.dragging').forEach(function(el){el.classList.remove('dragging');});
+  document.querySelectorAll('.drag-over-top').forEach(function(el){el.classList.remove('drag-over-top');});
+  document.querySelectorAll('.drag-over-bot').forEach(function(el){el.classList.remove('drag-over-bot');});
+  document.querySelectorAll('.drop-target-hover').forEach(function(el){el.classList.remove('drop-target-hover');});
+  document.body.classList.remove('is-dragging-task');
+  dragState = null;
+}
+
+function onDropTask(e, targetTaskId){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragState || dragState.type !== 'task'){ onDragEnd(); return; }
+  var sourceTaskId = dragState.id;
+  if(sourceTaskId === targetTaskId){ onDragEnd(); return; }
+  var sourceTask = D.tasks.find(function(t){return t.id === sourceTaskId;});
+  var targetTask = D.tasks.find(function(t){return t.id === targetTaskId;});
+  if(!sourceTask || !targetTask){ onDragEnd(); return; }
+  var targetEl = document.querySelector('[data-task-id="' + targetTaskId + '"]');
+  var insertBefore = targetEl && targetEl.classList.contains('drag-over-top');
+  if(sourceTask.projectId !== targetTask.projectId){
+    var tgtProj = D.projects.find(function(p){return p.id === targetTask.projectId;});
+    var pname = (tgtProj && tgtProj.name) || 'altre projecte';
+    if(!confirm('Moure aquesta tasca al projecte "' + pname + '"?')){ onDragEnd(); return; }
+    sourceTask.projectId = targetTask.projectId;
+  }
+  var srcIdx = D.tasks.findIndex(function(t){return t.id === sourceTaskId;});
+  D.tasks.splice(srcIdx, 1);
+  var tgtIdx = D.tasks.findIndex(function(t){return t.id === targetTaskId;});
+  D.tasks.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, sourceTask);
+  save(); onDragEnd(); renderMain();
+  toast('Tasca moguda \u2713');
+}
+
+function onDropSub(e, targetSubId, parentTaskId){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragState || dragState.type !== 'subtask'){ onDragEnd(); return; }
+  var sourceSubId = dragState.id;
+  if(sourceSubId === targetSubId){ onDragEnd(); return; }
+  var sourceSub = D.subtasks.find(function(s){return s.id === sourceSubId;});
+  var targetSub = D.subtasks.find(function(s){return s.id === targetSubId;});
+  if(!sourceSub || !targetSub){ onDragEnd(); return; }
+  var targetEl = document.querySelector('[data-sub-id="' + targetSubId + '"]');
+  var insertBefore = targetEl && targetEl.classList.contains('drag-over-top');
+  if(sourceSub.taskId !== targetSub.taskId){
+    sourceSub.taskId = targetSub.taskId;
+  }
+  var srcIdx = D.subtasks.findIndex(function(s){return s.id === sourceSubId;});
+  D.subtasks.splice(srcIdx, 1);
+  var tgtIdx = D.subtasks.findIndex(function(s){return s.id === targetSubId;});
+  D.subtasks.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, sourceSub);
+  save(); onDragEnd(); renderMain();
+  toast('Subtasca moguda \u2713');
+}
+
+function onDropSidebarProject(e, targetProjectId){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragState){ onDragEnd(); return; }
+  if(dragState.type === 'task'){
+    var sourceTask = D.tasks.find(function(t){return t.id === dragState.id;});
+    if(!sourceTask){ onDragEnd(); return; }
+    if(sourceTask.projectId === targetProjectId){ onDragEnd(); return; }
+    var targetProj = D.projects.find(function(p){return p.id === targetProjectId;});
+    var pname = (targetProj && targetProj.name) || 'projecte destination';
+    if(!confirm('Moure la tasca al projecte "' + pname + '"?')){ onDragEnd(); return; }
+    sourceTask.projectId = targetProjectId;
+    save(); onDragEnd(); renderSidebar(); renderMain();
+    toast('Tasca traslladada \u2713');
+  } else if(dragState.type === 'subtask'){
+    var sourceSub = D.subtasks.find(function(s){return s.id === dragState.id;});
+    if(!sourceSub){ onDragEnd(); return; }
+    if(!confirm('Convertir aquesta subtasca en tasca al projecte destination?')){ onDragEnd(); return; }
+    D.tasks.push({
+      id: uid(), projectId: targetProjectId, name: sourceSub.name,
+      status: sourceSub.status || 'pendent', priority: sourceSub.priority || 'mitja',
+      startDate: sourceSub.startDate || '', deadline: sourceSub.deadline || '',
+      assignee: sourceSub.assignee || '', technicians: '', notes: sourceSub.notes || ''
+    });
+    D.subtasks = D.subtasks.filter(function(s){return s.id !== sourceSub.id;});
+    save(); onDragEnd(); renderSidebar(); renderMain();
+    toast('Subtasca convertida en tasca \u2713');
+  }
+}
+
 // ═══════════════════════════════════════════════════════════
 
 // ─── RAG LOGIC ───────────────────────────────────────────────
