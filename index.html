@@ -36,7 +36,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .tree-toggle{background:none;border:none;color:var(--muted);font-size:9px;cursor:pointer;padding:0 5px 0 0;transition:transform var(--t);line-height:1;flex-shrink:0}
 .tree-toggle.open{transform:rotate(90deg)}
 .tree-client-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:8px}
-.tree-client-name{font-size:13px;font-weight:600;flex:0 1 auto;min-width:0;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.tree-client-name{font-size:13px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .tree-node-actions{display:none;gap:2px;margin-left:4px;flex-shrink:0}
 .tree-client-row:hover .tree-node-actions,.tree-area-row:hover .tree-node-actions,.tree-project-row:hover .tree-node-actions{display:flex}
 .tna{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 3px;border-radius:3px;line-height:1;transition:all var(--t)}
@@ -49,7 +49,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .tree-area-row{display:flex;align-items:center;padding:6px 10px 6px 22px;cursor:pointer;transition:background var(--t)}
 .tree-area-row:hover{background:var(--s1)}
 .tree-area-icon{color:var(--dim);font-size:10px;margin-right:7px;flex-shrink:0}
-.tree-area-name{font-size:12px;font-weight:500;flex:0 1 auto;min-width:0;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.tree-area-name{font-size:12px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
 .tree-projects{display:none;padding-bottom:2px}
 .tree-projects.open{display:block}
 .tree-project-row{display:flex;align-items:center;padding:5px 10px 5px 40px;cursor:pointer;border-left:2px solid transparent;transition:background var(--t)}
@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
   border-bottom:2px solid var(--border);background:var(--bg)
 }
 .task-table thead th.th-sm{width:26px;padding:10px 4px;text-align:center}
-.task-table thead th.th-task{width:auto;min-width:120px}
+.task-table thead th.th-task{width:auto}
 .task-table thead th.th-status{width:110px}
 .task-table thead th.th-prio{width:88px}
 .task-table thead th.th-dl{width:110px}
@@ -805,8 +805,8 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .cl-sec-bar{width:70px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
 .cl-sec-fill{height:100%;border-radius:2px;transition:width .4s}
 .cl-sec-pct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:30px;text-align:right}
-.cl-sec-acts{visibility:hidden;gap:2px;flex-shrink:0;display:flex}
-.cl-section-head:hover .cl-sec-acts{visibility:visible}
+.cl-sec-acts{display:none;gap:2px;flex-shrink:0}
+.cl-section-head:hover .cl-sec-acts{display:flex}
 /* Items container */
 .cl-items-wrap{display:none;background:var(--bg)}
 .cl-items-wrap.open{display:block}
@@ -832,9 +832,9 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .cl-item-resp{font-size:11px;color:var(--accent);margin-top:2px;display:flex;align-items:center;gap:4px}
 .cl-item-has-notes{font-size:10px;color:var(--dim);margin-top:2px}
 /* Item hover actions */
-.cl-item-acts{visibility:hidden;gap:2px;flex-shrink:0;margin-top:1px;display:flex}
-.cl-item:hover .cl-item-acts{visibility:visible}
-.cl-item.active .cl-item-acts{visibility:visible}
+.cl-item-acts{display:none;gap:2px;flex-shrink:0;margin-top:1px}
+.cl-item:hover .cl-item-acts{display:flex}
+.cl-item.active .cl-item-acts{display:flex}
 /* Add buttons */
 .cl-add-item-btn{display:flex;align-items:center;gap:6px;width:100%;padding:7px 14px;background:none;border:none;border-top:1px solid var(--border);color:var(--dim);font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all var(--t);text-align:left}
 .cl-add-item-btn:hover{background:var(--s1);color:var(--muted)}
@@ -897,7 +897,13 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .snav-export-btn{color:var(--accent)!important;font-weight:600!important}
 .snav-export-btn:hover{background:rgba(167,139,250,.15)!important}
 
-.tree-row-spacer{flex:1;min-height:22px;cursor:pointer}</style>
+/* ── LOADER ── */
+#pt-loader{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--border2);border-radius:24px;padding:7px 16px 7px 12px;display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:9998;animation:loaderFade .15s ease}
+#pt-loader.show{display:flex}
+#pt-loader .ldot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:loaderPulse 1s infinite}
+@keyframes loaderFade{from{opacity:0;transform:translate(-50%,-5px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes loaderPulse{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
 </head>
 <body>
 
@@ -959,107 +965,16 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
       <div class="modal-title">⚙ Eines</div>
       <button class="modal-x" onclick="closeSettings()">✕</button>
     </div>
-    <div class="modal-body settings-body" style="padding-top:0;flex:1;overflow:hidden;display:flex;flex-direction:column">
-            <div class="settings-layout">
-        <nav class="settings-nav" id="settings-nav">
-          <div class="settings-nav-group">
-            <div class="settings-nav-label">Dades</div>
-            <button class="snav-btn" data-admin="1" id="snav-import" onclick="setSTab('import')">
-              <span class="snav-icon">⬇</span>Importar
-            </button>
-            </div>
-          <div class="settings-nav-group">
-            <div class="settings-nav-label">Connexió</div>
-            <button class="snav-btn" data-admin="1" id="snav-sync" onclick="setSTab('sync')">
-              <span class="snav-icon">☁</span>Sync
-            </button>
-            <button class="snav-btn" data-admin="1" id="snav-drive" onclick="setSTab('drive')">
-              <span class="snav-icon">📁</span>Drive
-            </button>
-          </div>
-          <div class="settings-nav-group">
-            <div class="settings-nav-label">Accés</div>
-            <button class="snav-btn" id="snav-users" onclick="setSTab('users')" style="display:none">
-              <span class="snav-icon">👥</span>Usuaris
-            </button>
-            <button class="snav-btn" id="snav-perms" onclick="setSTab('perms')">
-              <span class="snav-icon">🔐</span>Permisos
-            </button>
-          </div>
-          <div class="settings-nav-group">
-            <div class="settings-nav-label">Aparença</div>
-            <button class="snav-btn" id="snav-visual" onclick="setSTab('visual')">
-              <span class="snav-icon">🎨</span>Visual
-            </button>
-          </div>
-          <div class="settings-nav-group" style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border)">
-            <button class="snav-btn" id="snav-info" onclick="setSTab('info')">
-              <span class="snav-icon">ℹ</span>Info
-            </button>
-          </div>
-        <div class="settings-nav-group" style="margin-top:auto;padding:8px 0;border-top:1px solid var(--border)">
-            <button class="snav-btn snav-export-btn" id="snav-export" onclick="quickExport()">
-              <span class="snav-icon">⬇</span>Exportar JSON
-            </button>
-          </div>
-        </nav>
-        <div class="settings-content">
-      <!-- EXPORT -->
-      <div class="spanel" id="sp-export">
-        <div class="stat-row" id="export-stats">
+    <div class="modal-body settings-body" style="padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div class="settings-layout">
+        <nav class="settings-nav" id="settings-nav"></nav>
+        <div class="settings-content" id="settings-content"></div>
       </div>
-
-      <!-- IMPORT -->
-      <div class="spanel" id="sp-import">
-        <div id="import-gas-note" style="display:none;padding:10px 14px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.7">
-          📦 <strong style="color:var(--text)">Migració des del sistema antic:</strong> exporta les dades del tracker local, copia el JSON i enganxa'l aquí. Es guardarà al Drive automàticament.
-      </div>
-
-      <!-- SYNC -->
-      <div class="spanel" id="sp-sync">
-        <div class="fr">
-          <label>URL del Google Apps Script</label>
-          <div class="gas-url-row">
-            <input type="text" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec">
-            <button class="btn btn-ghost" onclick="testGAS()" style="white-space:nowrap;padding:8px 14px">Provar</button>
-      </div>
-
-      <!-- DRIVE -->
-      <div class="spanel" id="sp-drive">
-        <div id="drive-content">
-      </div>
-
-      <!-- USERS -->
-      <div class="spanel" id="sp-users">
-        <div id="users-content">
-      </div>
-
-      <!-- PERMS -->
-      <div class="spanel" id="sp-perms">
-        <div id="perms-content">
-      </div>
-
-      <!-- VISUAL -->
-      <div class="spanel" id="sp-visual">
-        <div id="visual-content">
-      </div>
-
-      <!-- INFO -->
-      <div class="spanel" id="sp-info">
-        <div id="info-content">
-      </div>
-
-</div><!-- settings-content -->
-      </div><!-- settings-layout -->
-</div>
-        </div>
-      </div>
-
-      
-      </div></div>
+    </div>
   </div>
 </div>
 
+<div id="pt-loader"><span class="ldot"></span><span id="pt-loader-msg">Sincronitzant...</span></div>
 <div id="toast"></div>
 
 <script>
@@ -1090,17 +1005,52 @@ Object.defineProperty(window, 'IS_GAS', { get: isConnected, configurable: true }
 
 // ── RPC wrapper ──────────────────────────────────────────────
 // Always returns a string (for compatibility: existing code does JSON.parse).
+let _activeRequests = 0;
+function showLoader(msg){
+  _activeRequests++;
+  const el = document.getElementById('pt-loader');
+  const msgEl = document.getElementById('pt-loader-msg');
+  if(msgEl && msg) msgEl.textContent = msg;
+  if(el) el.classList.add('show');
+}
+function hideLoader(){
+  _activeRequests = Math.max(0, _activeRequests - 1);
+  if(_activeRequests === 0){
+    const el = document.getElementById('pt-loader');
+    if(el) el.classList.remove('show');
+  }
+}
+
+const _METHOD_MSG = {
+  getData:'Carregant dades...',
+  saveData:'Guardant al Drive...',
+  ping:'Connectant...',
+  getUsers:'Carregant usuaris...',
+  addUser:'Creant usuari...',
+  removeUser:'Eliminant usuari...',
+  uploadDriveFile:'Pujant fitxer...',
+  createDriveFolder:'Creant carpeta...',
+  importData:'Important dades...',
+};
+
 async function gasRun(method, ...args) {
   if (!isConnected()) throw new Error('No connectat al backend');
-  const resp = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ token: GAS_TOKEN, method, args })
-  });
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  const data = await resp.json();
-  if (data.error) throw new Error(data.error);
-  return typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
+  // Don't show loader for fast saves to avoid flicker
+  const showUI = method !== 'saveData' || _activeRequests === 0;
+  if(showUI) showLoader(_METHOD_MSG[method] || 'Processant...');
+  try {
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: GAS_TOKEN, method, args })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    return typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
+  } finally {
+    if(showUI) hideLoader();
+  }
 }
 
 // Ping the backend (no auth needed) — used to validate URL during setup
@@ -1404,6 +1354,14 @@ function gasLoad(){
 
 // ─── UTILS ───────────────────────────────────────────────────
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function nowISO(){return new Date().toISOString();}
+function meName(){return (CURRENT_USER && (CURRENT_USER.name || CURRENT_USER.email)) || 'local';}
+function audit(obj, isUpdate){
+  const t = nowISO(), u = meName();
+  if(!isUpdate){ obj.createdAt = t; obj.createdBy = u; }
+  obj.updatedAt = t; obj.updatedBy = u;
+  return obj;
+}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function today(){return new Date().toISOString().slice(0,10)}
 function fmtDate(iso){if(!iso)return'—';const[y,m,d]=iso.split('-');return`${d}/${m}/${y.slice(2)}`}
@@ -1439,8 +1397,8 @@ function getModalContent(type,id,parentId){
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const avatarVal=pendingAvatar===null?(ex?.avatar||null):pendingAvatar===''?null:pendingAvatar;
-        if(id){const o=D.clients.find(c=>c.id===id);o.name=name;o.color=selColor;o.avatar=avatarVal;toast('Client actualitzat')}
-        else{D.clients.push({id:uid(),name,color:selColor,avatar:avatarVal});toast('Client creat ✓')}
+        if(id){const o=D.clients.find(c=>c.id===id);o.name=name;o.color=selColor;o.avatar=avatarVal;audit(o,true);toast('Client actualitzat')}
+        else{D.clients.push(audit({id:uid(),name,color:selColor,avatar:avatarVal},false));toast('Client creat ✓')}
         pendingAvatar=null;save();closeModal();renderAll();
       }
     },
@@ -1449,8 +1407,8 @@ function getModalContent(type,id,parentId){
       html:`<div class="fr"><label>Nom de l'àrea</label><input type="text" id="f-name" value="${E('name')}" placeholder="p.ex. Desenvolupament, Màrqueting..."></div>`,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
-        if(id){D.areas.find(a=>a.id===id).name=name;toast('Àrea actualitzada')}
-        else{const a={id:uid(),clientId:parentId,name};D.areas.push(a);ST.xAreas.add(a.id);toast('Àrea creada ✓')}
+        if(id){const o=D.areas.find(a=>a.id===id);o.name=name;audit(o,true);toast('Àrea actualitzada')}
+        else{const a=audit({id:uid(),clientId:parentId,name},false);D.areas.push(a);ST.xAreas.add(a.id);toast('Àrea creada ✓')}
         save();closeModal();renderAll();
       }
     },
@@ -1466,8 +1424,8 @@ function getModalContent(type,id,parentId){
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const fd={name,desc:document.getElementById('f-desc').value.trim(),start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,manager:document.getElementById('f-pm').value.trim()};
-        if(id){Object.assign(D.projects.find(p=>p.id===id),fd);toast('Projecte actualitzat')}
-        else{const p={id:uid(),areaId:parentId,...fd};D.projects.push(p);ST.projectId=p.id;toast('Projecte creat ✓')}
+        if(id){const o=D.projects.find(p=>p.id===id);Object.assign(o,fd);audit(o,true);toast('Projecte actualitzat')}
+        else{const p=audit({id:uid(),areaId:parentId,...fd},false);D.projects.push(p);ST.projectId=p.id;toast('Projecte creat ✓')}
         save();closeModal();renderAll();
       }
     },
@@ -1522,8 +1480,8 @@ function getModalContent(type,id,parentId){
         const proj=ex?D.projects.find(p=>p.id===ex.projectId):D.projects.find(p=>p.id===parentId);
         const lead=document.getElementById('f-ass').value.trim()||(proj?.manager||'');
         const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,taskType:document.getElementById('f-type').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:lead,technicians:document.getElementById('f-tech').value.trim(),notes:document.getElementById('f-notes').value.trim()};
-        if(id){Object.assign(D.tasks.find(t=>t.id===id),fd);toast('Tasca actualitzada')}
-        else{D.tasks.push({id:uid(),projectId:parentId,...fd});toast('Tasca creada ✓')}
+        if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);audit(o,true);toast('Tasca actualitzada')}
+        else{D.tasks.push(audit({id:uid(),projectId:parentId,...fd},false));toast('Tasca creada ✓')}
         save();closeModal();renderMain();
       }
     },
@@ -1561,8 +1519,8 @@ function getModalContent(type,id,parentId){
         const proj=parentTask?D.projects.find(p=>p.id===parentTask.projectId):null;
         const exec=document.getElementById('f-ass').value.trim()||(proj?.manager||parentTask?.assignee||'');
         const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec,notes:document.getElementById('f-notes').value.trim()};
-        if(id){Object.assign(D.subtasks.find(s=>s.id===id),fd);toast('Subtasca actualitzada')}
-        else{const s={id:uid(),taskId:parentId,...fd};D.subtasks.push(s);ST.xTasks.add(parentId);toast('Subtasca creada ✓')}
+        if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);audit(o,true);toast('Subtasca actualitzada')}
+        else{const s=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(s);ST.xTasks.add(parentId);toast('Subtasca creada ✓')}
         save();closeModal();renderMain();
       }
     },
@@ -1581,8 +1539,8 @@ function getModalContent(type,id,parentId){
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const fd={name,date:document.getElementById('f-date').value,status:document.getElementById('f-st').value,desc:document.getElementById('f-desc').value.trim()};
-        if(id){Object.assign(D.milestones.find(m=>m.id===id),fd);toast('Fita actualitzada')}
-        else{D.milestones.push({id:uid(),projectId:parentId,...fd});toast('Fita creada ✓')}
+        if(id){const o=D.milestones.find(m=>m.id===id);Object.assign(o,fd);audit(o,true);toast('Fita actualitzada')}
+        else{D.milestones.push(audit({id:uid(),projectId:parentId,...fd},false));toast('Fita creada ✓')}
         save();closeModal();renderMain();
       }
     }
@@ -1690,20 +1648,14 @@ function xTask(id){
 
 // Toggle expand/collapse when clicking the row (but not on actionable children)
 function treeRowToggle(e, type, id){
+  // Ignore clicks on buttons, links, inputs and named clickable spans
   const t = e.target;
-  // Only act if the direct target is the row div itself (or a non-interactive child)
-  // Ignore all buttons, action elements, and navigating elements
-  if(t.tagName === 'BUTTON') return;
-  if(t.tagName === 'INPUT') return;
-  if(t.tagName === 'IMG') return;
   if(t.closest('.tree-toggle')) return;
   if(t.closest('.tna')) return;
   if(t.closest('.cl-avatar-wrap')) return;
   if(t.closest('.tree-client-name')) return;
   if(t.closest('.tree-area-name')) return;
   if(t.closest('.tree-area-icon')) return;
-  if(t.closest('.tree-count')) return;
-  if(t.closest('.tree-node-actions')) return;
   e.stopPropagation();
   if(type==='client') xClient(id);
   else if(type==='area') xArea(id);
@@ -1715,14 +1667,14 @@ function xArea(id){
   save();renderSidebar();
 }
 function selArea(id){
+  // Navigate to area overview
   ST.areaId=id;ST.clientId=null;ST.projectId=null;ST.view='area';
-  ST.xAreas.add(id);
-  ST.xTasks=new Set;
+  ST.xAreas.add(id); // auto-expand
   save();renderSidebar();renderMain();
 }
-function selProject(id){ST.projectId=id;ST.clientId=null;ST.areaId=null;ST.view='project';ST.tab='tasks';ST.activeClId=null;ST.xTasks=new Set;save();renderSidebar();renderMain()}
-function selClient(id){ST.clientId=id;ST.projectId=null;ST.areaId=null;ST.view='client';ST.xClients.add(id);ST.xTasks=new Set;save();renderSidebar();renderMain()}
-function openDashboard(){ST.view='dashboard';ST.projectId=null;ST.clientId=null;ST.areaId=null;ST.xTasks=new Set;save();renderSidebar();renderMain();}
+function selProject(id){ST.projectId=id;ST.clientId=null;ST.areaId=null;ST.view='project';ST.tab='tasks';ST.activeClId=null;save();renderSidebar();renderMain()}
+function selClient(id){ST.clientId=id;ST.projectId=null;ST.areaId=null;ST.view='client';ST.xClients.add(id);save();renderSidebar();renderMain()}
+function openDashboard(){ST.view='dashboard';ST.projectId=null;ST.clientId=null;ST.areaId=null;save();renderSidebar();renderMain();}
 
 // ─── RENDER SIDEBAR ──────────────────────────────────────────
 function renderSidebar(){
@@ -1781,11 +1733,10 @@ function renderSidebar(){
         </div>`;
       }).join('');
       return`<div class="tree-area">
-        <div class="tree-area-row" onclick="xArea('${ar.id}')">
+        <div class="tree-area-row" onclick="treeRowToggle(event,'area','${ar.id}')">
           <button class="tree-toggle${aOpen?' open':''}" onclick="event.stopPropagation();xArea('${ar.id}')">▶</button>
-          <span class="tree-area-icon" onclick="selArea('${ar.id}');event.stopPropagation()" style="cursor:pointer">⊞</span>
-          <span class="tree-area-name" onclick="selArea('${ar.id}');event.stopPropagation()" style="cursor:pointer${ST.areaId===ar.id&&!ST.projectId?';color:var(--text)':''}">${esc(ar.name)}</span>
-          <div class="tree-row-spacer"></div>
+          <span class="tree-area-icon" onclick="selArea('${ar.id}')" style="cursor:pointer">⊞</span>
+          <span class="tree-area-name" onclick="selArea('${ar.id}')" style="cursor:pointer${ST.areaId===ar.id&&!ST.projectId?';color:var(--text)':''}">${esc(ar.name)}</span>
           <div class="tree-node-actions">
             <button class="tna" onclick="openModal('project',null,'${ar.id}')" title="Nou projecte">＋</button>
             <button class="tna" onclick="openModal('area','${ar.id}',null)" title="Editar">✎</button>
@@ -1797,13 +1748,12 @@ function renderSidebar(){
     }).join('');
 
     return`<div class="tree-client">
-      <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="xClient('${cl.id}')">
+      <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="treeRowToggle(event,'client','${cl.id}')">
         <button class="tree-toggle${isOpen?' open':''}" onclick="event.stopPropagation();xClient('${cl.id}')">▶</button>
-        <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}');event.stopPropagation()" style="cursor:pointer">
+        <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}')" style="cursor:pointer">
           ${cl.avatar?`<img class="cl-avatar" src="${cl.avatar}">`:''}
         </div>
-        <div class="tree-client-name" onclick="selClient('${cl.id}');event.stopPropagation()" style="cursor:pointer">${esc(cl.name)}</div>
-        <div class="tree-row-spacer"></div>
+        <div class="tree-client-name" onclick="selClient('${cl.id}')" style="cursor:pointer">${esc(cl.name)}</div>
         <div class="tree-count">${done}/${total}</div>
         <div class="tree-node-actions">
           <button class="tna" onclick="event.stopPropagation();openModal('area',null,'${cl.id}')" title="Nova àrea">＋</button>
@@ -2126,41 +2076,147 @@ function renderMilestones(ms){
 let v1data=null; // cached v1 legacy data
 let importFileData=null;
 
-function openSettings(){
-  setSTab(isAdmin()?'sync':'visual');
-  setTimeout(()=>{
-    document.querySelectorAll('.stab[data-admin]').forEach(t=>{
-      t.style.display=isAdmin()?'':'none';
-    });
+// ═══════════════════════════════════════════════════════════
+// SETTINGS REGISTRY (declarative panel definitions)
+// ═══════════════════════════════════════════════════════════
+const SETTINGS_REGISTRY = [
+  {id:'sync',    label:'Sync',         icon:'☁',  group:'Connexió', adminOnly:false, render:renderSyncPanel},
+  {id:'drive',   label:'Drive',        icon:'📁', group:'Connexió', adminOnly:false, render:renderDriveSettings},
+  {id:'users',   label:'Usuaris',      icon:'👥', group:'Accés',    adminOnly:true,  render:renderUsersPanel},
+  {id:'perms',   label:'Permisos',     icon:'🔐', group:'Accés',    adminOnly:true,  render:renderPermsPanel},
+  {id:'import',  label:'Importar',     icon:'⬇',  group:'Dades',    adminOnly:true,  render:renderImportPanel},
+  {id:'export',  label:'Exportar',     icon:'⬆',  group:'Dades',    adminOnly:true,  render:renderExportPanel},
+  {id:'visual',  label:'Visual',       icon:'🎨', group:'Aparença', adminOnly:false, render:renderVisualPanel},
+  {id:'info',    label:'Info',         icon:'ℹ',  group:'Sistema',  adminOnly:false, render:renderInfoPanel},
+  {id:'logout',  label:'Tancar sessió', icon:'⏻', group:'Sistema',  adminOnly:false, action:logout, danger:true},
+];
 
-  },0);
-  v1data=null;try{const r=localStorage.getItem(K1);if(r)v1data=JSON.parse(r)}catch(e){}
-  // Show GAS-only elements
-  const stabUsers=document.getElementById('stab-users');
-  if(stabUsers)stabUsers.style.display=IS_GAS?'':'none';
-  const importNote=document.getElementById('import-gas-note');
-  if(importNote)importNote.style.display=IS_GAS?'':'none';
-  setSTab('export');
+function buildSettingsUI(){
+  const nav = document.getElementById('settings-nav');
+  const content = document.getElementById('settings-content');
+  if(!nav || !content) return;
+  // Group entries
+  const groups = {};
+  for(const e of SETTINGS_REGISTRY){
+    if(e.adminOnly && !isAdmin()) continue;
+    if(e.id === 'logout' && !isConnected()) continue; // hide logout when not connected
+    if(!groups[e.group]) groups[e.group] = [];
+    groups[e.group].push(e);
+  }
+  // Build nav HTML
+  const groupOrder = ['Connexió','Accés','Dades','Aparença','Sistema'];
+  let navHtml = '';
+  for(const g of groupOrder){
+    if(!groups[g]) continue;
+    const isLast = g === 'Sistema';
+    navHtml += `<div class="settings-nav-group"${isLast?' style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border)"':''}>`;
+    if(!isLast) navHtml += `<div class="settings-nav-label">${esc(g)}</div>`;
+    for(const e of groups[g]){
+      const dangerStyle = e.danger ? ';color:var(--p-high)' : '';
+      navHtml += `<button class="snav-btn" data-tab-id="${e.id}" onclick="setSTab('${e.id}')" style="text-align:left${dangerStyle}">
+        <span class="snav-icon">${e.icon}</span>${esc(e.label)}
+      </button>`;
+    }
+    navHtml += '</div>';
+  }
+  nav.innerHTML = navHtml;
+  // Build panel containers with inner divs that render fns expect
+  // Some render fns write to inner divs (#export-stats, #info-content, etc.)
+  // Others write directly to the spanel — both patterns supported.
+  const innerByPanel = {
+    'export': '<div class="stat-row" id="export-stats"></div><div class="fr" style="margin-top:14px"><label>JSON exportat</label><textarea class="textarea-mono" id="export-ta" readonly></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost" onclick="copyExport()">📋 Copiar</button><button class="btn btn-prim" onclick="downloadExport()">⬇ Descarregar</button></div>',
+    'drive':  '<div id="drive-content"></div>',
+    'users':  '<div id="users-content"></div>',
+    'perms':  '<div id="perms-content"></div>',
+    'visual': '<div id="visual-content"></div>',
+    'info':   '<div id="info-content"></div>',
+  };
+  let panelsHtml = '';
+  for(const e of SETTINGS_REGISTRY){
+    if(e.action) continue;
+    const inner = innerByPanel[e.id] || '';
+    panelsHtml += `<div class="spanel" id="sp-${e.id}">${inner}</div>`;
+  }
+  content.innerHTML = panelsHtml;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOGOUT
+// ═══════════════════════════════════════════════════════════
+function logout(){
+  if(!confirm('Tancar sessió? Es desconnectarà del backend i tornaràs a la pantalla d\'inici.')) return;
+  clearBackendConfig();
+  setSyncState('local');
+  closeSettings();
+  // Clear local UI state to avoid stale data display
+  ST = {projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''}};
+  D = {clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[]};
+  renderAll();
+  // Show backend setup
+  setTimeout(()=>openBackendSetup(), 300);
+  toast('Sessió tancada');
+}
+
+// ═══════════════════════════════════════════════════════════
+// IMPORT PANEL (built dynamically, was hard-coded HTML before)
+// ═══════════════════════════════════════════════════════════
+function renderImportPanel(){
+  const el = document.getElementById('sp-import');
+  if(!el) return;
+  const showGasNote = isConnected();
+  el.innerHTML = `
+    ${showGasNote ? `<div style="padding:10px 14px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.7">
+      📦 <strong style="color:var(--text)">Migració des del sistema antic:</strong> exporta les dades del tracker local, copia el JSON i enganxa'l aquí. Es guardarà al Drive automàticament.
+    </div>` : ''}
+    <div class="fr">
+      <label>Mode d'importació</label>
+      <select id="import-mode">
+        <option value="merge">Fusionar (preservar dades existents)</option>
+        <option value="replace">Reemplaçar (esborrar i importar)</option>
+      </select>
+    </div>
+    <div class="fr">
+      <label>Fitxer JSON</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="file" id="import-file" accept=".json" onchange="handleFile(event)" style="flex:1;font-size:12px">
+        <span id="file-name" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+    </div>
+    <div class="fr">
+      <label>O bé enganxa el JSON aquí</label>
+      <textarea class="textarea-mono" id="import-ta" placeholder='{"clients":[],"areas":[],"projects":[],...}'></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-prim" onclick="doImport()">Importar</button>
+    </div>`;
+}
+
+function openSettings(){
+  buildSettingsUI();
+  const defaultTab = isAdmin() ? 'sync' : 'visual';
+  setSTab(defaultTab);
   document.getElementById('modal-settings').classList.add('open');
 }
 function closeSettings(){document.getElementById('modal-settings').classList.remove('open')}
 
-function setSTab(name){
-  const names=['export','import','sync','drive','users','perms','visual','info'];
-  const panels=['sp-export','sp-import','sp-sync','sp-drive','sp-users','sp-perms','sp-visual','sp-info'];
-  // Update sidebar nav buttons
-  document.querySelectorAll('.snav-btn').forEach(b=>{
-    const id=b.id.replace('snav-','');
-    b.classList.toggle('on', id===name);
+function setSTab(id){
+  const entry = SETTINGS_REGISTRY.find(e => e.id === id);
+  if(!entry){ console.warn('Unknown settings tab:', id); return; }
+  if(entry.adminOnly && !isAdmin()){ toast('Accés restringit a administradors'); return; }
+  // If it's an action button (logout, etc), just run it — don't switch tab
+  if(entry.action){ entry.action(); return; }
+  // Update nav active state
+  document.querySelectorAll('.snav-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.tabId === id);
   });
-  document.querySelectorAll('.spanel').forEach((p,i)=>p.classList.toggle('on',panels[i]===`sp-${name}`));
-  if(name==='export'){renderExportPanel();}
-  if(name==='sync')renderSyncPanel();
-  if(name==='visual')renderVisualPanel();
-  if(name==='perms')renderPermsPanel();
-  if(name==='drive')renderDriveSettings();
-  if(name==='users')renderUsersPanel();
-  if(name==='info')renderInfoPanel();
+  // Show only this panel
+  document.querySelectorAll('.spanel').forEach(p => {
+    p.classList.toggle('on', p.id === 'sp-' + id);
+  });
+  // Render content
+  if(entry.render){
+    try { entry.render(); } catch(e){ console.error('Render error for '+id+':', e); }
+  }
 }
 
 // ─── EXPORT ──────────────────────────────────────────────────
@@ -2419,15 +2475,7 @@ function toggleSection(clId,secId){
   const cl=D.checklists.find(c=>c.id===clId);if(!cl)return;
   const sec=cl.items.find(i=>i.id===secId);if(!sec)return;
   sec.collapsed=!sec.collapsed;
-  // Preserve scroll position before re-render
-  const listCol=document.getElementById('cl-list-col');
-  const scrollTop=listCol?listCol.scrollTop:0;
   save();renderChecklist(clId);
-  // Restore scroll position after re-render
-  requestAnimationFrame(function(){
-    const listColAfter=document.getElementById('cl-list-col');
-    if(listColAfter)listColAfter.scrollTop=scrollTop;
-  });
 }
 function deleteChecklist(clId){
   if(!confirm('Eliminar aquest checklist?'))return;
@@ -3258,95 +3306,6 @@ function onDragOverSidebarProject(e,targetProjectId){
 }
 function onDragLeaveSidebarProject(e,targetProjectId){
   document.getElementById(`sbproj-${targetProjectId}`)?.classList.remove('drop-target-hover');
-}
-
-// ─── DROP HANDLERS (added v1.0.x) ───────────────────────────
-function onDragEnd(){
-  document.querySelectorAll('.dragging').forEach(function(el){el.classList.remove('dragging');});
-  document.querySelectorAll('.drag-over-top').forEach(function(el){el.classList.remove('drag-over-top');});
-  document.querySelectorAll('.drag-over-bot').forEach(function(el){el.classList.remove('drag-over-bot');});
-  document.querySelectorAll('.drop-target-hover').forEach(function(el){el.classList.remove('drop-target-hover');});
-  document.body.classList.remove('is-dragging-task');
-  dragState = null;
-}
-
-function onDropTask(e, targetTaskId){
-  e.preventDefault(); e.stopPropagation();
-  if(!dragState || dragState.type !== 'task'){ onDragEnd(); return; }
-  var sourceTaskId = dragState.id;
-  if(sourceTaskId === targetTaskId){ onDragEnd(); return; }
-  var sourceTask = D.tasks.find(function(t){return t.id === sourceTaskId;});
-  var targetTask = D.tasks.find(function(t){return t.id === targetTaskId;});
-  if(!sourceTask || !targetTask){ onDragEnd(); return; }
-  var targetEl = document.querySelector('[data-task-id="' + targetTaskId + '"]');
-  var insertBefore = targetEl && targetEl.classList.contains('drag-over-top');
-  if(sourceTask.projectId !== targetTask.projectId){
-    var tgtProj = D.projects.find(function(p){return p.id === targetTask.projectId;});
-    var pname = (tgtProj && tgtProj.name) || 'altre projecte';
-    if(!confirm('Moure aquesta tasca al projecte "' + pname + '"?')){ onDragEnd(); return; }
-    sourceTask.projectId = targetTask.projectId;
-  }
-  var srcIdx = D.tasks.findIndex(function(t){return t.id === sourceTaskId;});
-  D.tasks.splice(srcIdx, 1);
-  var tgtIdx = D.tasks.findIndex(function(t){return t.id === targetTaskId;});
-  D.tasks.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, sourceTask);
-  save(); onDragEnd(); renderMain();
-  toast('Tasca moguda \u2713');
-}
-
-function onDropSub(e, targetSubId, parentTaskId){
-  e.preventDefault(); e.stopPropagation();
-  if(!dragState || dragState.type !== 'subtask'){ onDragEnd(); return; }
-  var sourceSubId = dragState.id;
-  if(sourceSubId === targetSubId){ onDragEnd(); return; }
-  var sourceSub = D.subtasks.find(function(s){return s.id === sourceSubId;});
-  var targetSub = D.subtasks.find(function(s){return s.id === targetSubId;});
-  if(!sourceSub || !targetSub){ onDragEnd(); return; }
-  var targetEl = document.querySelector('[data-sub-id="' + targetSubId + '"]');
-  var insertBefore = targetEl && targetEl.classList.contains('drag-over-top');
-  // Reparent if dropping onto a different task
-  var newTaskId = targetSub.taskId;
-  sourceSub.taskId = newTaskId;
-  // Ensure the destination task is expanded so the sub is visible
-  ST.xTasks.add(newTaskId);
-  // Reorder within D.subtasks
-  var srcIdx = D.subtasks.findIndex(function(s){return s.id === sourceSubId;});
-  D.subtasks.splice(srcIdx, 1);
-  // After removal, recalculate target index
-  var tgtIdx = D.subtasks.findIndex(function(s){return s.id === targetSubId;});
-  if(tgtIdx < 0) tgtIdx = D.subtasks.length;
-  D.subtasks.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, sourceSub);
-  save(); onDragEnd(); renderMain();
-  toast('Subtasca moguda \u2713');
-}
-
-function onDropSidebarProject(e, targetProjectId){
-  e.preventDefault(); e.stopPropagation();
-  if(!dragState){ onDragEnd(); return; }
-  if(dragState.type === 'task'){
-    var sourceTask = D.tasks.find(function(t){return t.id === dragState.id;});
-    if(!sourceTask){ onDragEnd(); return; }
-    if(sourceTask.projectId === targetProjectId){ onDragEnd(); return; }
-    var targetProj = D.projects.find(function(p){return p.id === targetProjectId;});
-    var pname = (targetProj && targetProj.name) || 'projecte destination';
-    if(!confirm('Moure la tasca al projecte "' + pname + '"?')){ onDragEnd(); return; }
-    sourceTask.projectId = targetProjectId;
-    save(); onDragEnd(); renderSidebar(); renderMain();
-    toast('Tasca traslladada \u2713');
-  } else if(dragState.type === 'subtask'){
-    var sourceSub = D.subtasks.find(function(s){return s.id === dragState.id;});
-    if(!sourceSub){ onDragEnd(); return; }
-    if(!confirm('Convertir aquesta subtasca en tasca al projecte destination?')){ onDragEnd(); return; }
-    D.tasks.push({
-      id: uid(), projectId: targetProjectId, name: sourceSub.name,
-      status: sourceSub.status || 'pendent', priority: sourceSub.priority || 'mitja',
-      startDate: sourceSub.startDate || '', deadline: sourceSub.deadline || '',
-      assignee: sourceSub.assignee || '', technicians: '', notes: sourceSub.notes || ''
-    });
-    D.subtasks = D.subtasks.filter(function(s){return s.id !== sourceSub.id;});
-    save(); onDragEnd(); renderSidebar(); renderMain();
-    toast('Subtasca convertida en tasca \u2713');
-  }
 }
 
 // ═══════════════════════════════════════════════════════════
