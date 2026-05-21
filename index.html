@@ -2095,14 +2095,12 @@ let v1data=null; // cached v1 legacy data
 let importFileData=null;
 
 function openSettings(){
+  setSTab(isAdmin()?'sync':'visual');
   setTimeout(()=>{
     document.querySelectorAll('.stab[data-admin]').forEach(t=>{
       t.style.display=isAdmin()?'':'none';
     });
-    if(!isAdmin()){
-      const active=document.querySelector('.stab.on');
-      if(active&&active.dataset&&active.dataset.admin) setSTab('visual');
-    }
+
   },0);
   v1data=null;try{const r=localStorage.getItem(K1);if(r)v1data=JSON.parse(r)}catch(e){}
   // Show GAS-only elements
@@ -2124,7 +2122,7 @@ function setSTab(name){
     b.classList.toggle('on', id===name);
   });
   document.querySelectorAll('.spanel').forEach((p,i)=>p.classList.toggle('on',panels[i]===`sp-${name}`));
-  if(name==='export')renderExportPanel();
+  if(name==='export'){renderExportPanel();}
   if(name==='sync')renderSyncPanel();
   if(name==='visual')renderVisualPanel();
   if(name==='perms')renderPermsPanel();
@@ -2136,6 +2134,7 @@ function setSTab(name){
 // ─── EXPORT ──────────────────────────────────────────────────
 function renderExportPanel(){
   const stats=document.getElementById('export-stats');
+  if(!stats)return;
   stats.innerHTML=`
     <div class="stat-p"><div class="stat-n">${D.clients.length}</div><div class="stat-l">Clients</div></div>
     <div class="stat-p"><div class="stat-n">${D.areas.length}</div><div class="stat-l">Àrees</div></div>
@@ -2144,7 +2143,7 @@ function renderExportPanel(){
     <div class="stat-p"><div class="stat-n">${D.subtasks.length}</div><div class="stat-l">Subtasques</div></div>
     <div class="stat-p"><div class="stat-n">${D.milestones.length}</div><div class="stat-l">Fites</div></div>`;
   const payload={...D,_v:SCHEMA_VER,_exported:new Date().toISOString()};
-  document.getElementById('export-ta').value=JSON.stringify(payload,null,2);
+  const ta=document.getElementById('export-ta');if(ta)ta.value=JSON.stringify(payload,null,2);
 }
 
 function copyExport(){
