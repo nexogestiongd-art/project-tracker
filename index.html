@@ -805,8 +805,8 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .cl-sec-bar{width:70px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
 .cl-sec-fill{height:100%;border-radius:2px;transition:width .4s}
 .cl-sec-pct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:30px;text-align:right}
-.cl-sec-acts{display:none;gap:2px;flex-shrink:0}
-.cl-section-head:hover .cl-sec-acts{display:flex}
+.cl-sec-acts{visibility:hidden;gap:2px;flex-shrink:0;display:flex}
+.cl-section-head:hover .cl-sec-acts{visibility:visible}
 /* Items container */
 .cl-items-wrap{display:none;background:var(--bg)}
 .cl-items-wrap.open{display:block}
@@ -832,9 +832,9 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .cl-item-resp{font-size:11px;color:var(--accent);margin-top:2px;display:flex;align-items:center;gap:4px}
 .cl-item-has-notes{font-size:10px;color:var(--dim);margin-top:2px}
 /* Item hover actions */
-.cl-item-acts{display:none;gap:2px;flex-shrink:0;margin-top:1px}
-.cl-item:hover .cl-item-acts{display:flex}
-.cl-item.active .cl-item-acts{display:flex}
+.cl-item-acts{visibility:hidden;gap:2px;flex-shrink:0;margin-top:1px;display:flex}
+.cl-item:hover .cl-item-acts{visibility:visible}
+.cl-item.active .cl-item-acts{visibility:visible}
 /* Add buttons */
 .cl-add-item-btn{display:flex;align-items:center;gap:6px;width:100%;padding:7px 14px;background:none;border:none;border-top:1px solid var(--border);color:var(--dim);font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all var(--t);text-align:left}
 .cl-add-item-btn:hover{background:var(--s1);color:var(--muted)}
@@ -1689,14 +1689,20 @@ function xTask(id){
 
 // Toggle expand/collapse when clicking the row (but not on actionable children)
 function treeRowToggle(e, type, id){
-  // Ignore clicks on buttons, links, inputs and named clickable spans
   const t = e.target;
+  // Only act if the direct target is the row div itself (or a non-interactive child)
+  // Ignore all buttons, action elements, and navigating elements
+  if(t.tagName === 'BUTTON') return;
+  if(t.tagName === 'INPUT') return;
+  if(t.tagName === 'IMG') return;
   if(t.closest('.tree-toggle')) return;
   if(t.closest('.tna')) return;
   if(t.closest('.cl-avatar-wrap')) return;
   if(t.closest('.tree-client-name')) return;
   if(t.closest('.tree-area-name')) return;
   if(t.closest('.tree-area-icon')) return;
+  if(t.closest('.tree-count')) return;
+  if(t.closest('.tree-node-actions')) return;
   e.stopPropagation();
   if(type==='client') xClient(id);
   else if(type==='area') xArea(id);
@@ -2410,7 +2416,15 @@ function toggleSection(clId,secId){
   const cl=D.checklists.find(c=>c.id===clId);if(!cl)return;
   const sec=cl.items.find(i=>i.id===secId);if(!sec)return;
   sec.collapsed=!sec.collapsed;
+  // Preserve scroll position before re-render
+  const listCol=document.getElementById('cl-list-col');
+  const scrollTop=listCol?listCol.scrollTop:0;
   save();renderChecklist(clId);
+  // Restore scroll position after re-render
+  requestAnimationFrame(function(){
+    const listColAfter=document.getElementById('cl-list-col');
+    if(listColAfter)listColAfter.scrollTop=scrollTop;
+  });
 }
 function deleteChecklist(clId){
   if(!confirm('Eliminar aquest checklist?'))return;
@@ -3287,12 +3301,17 @@ function onDropSub(e, targetSubId, parentTaskId){
   if(!sourceSub || !targetSub){ onDragEnd(); return; }
   var targetEl = document.querySelector('[data-sub-id="' + targetSubId + '"]');
   var insertBefore = targetEl && targetEl.classList.contains('drag-over-top');
-  if(sourceSub.taskId !== targetSub.taskId){
-    sourceSub.taskId = targetSub.taskId;
-  }
+  // Reparent if dropping onto a different task
+  var newTaskId = targetSub.taskId;
+  sourceSub.taskId = newTaskId;
+  // Ensure the destination task is expanded so the sub is visible
+  ST.xTasks.add(newTaskId);
+  // Reorder within D.subtasks
   var srcIdx = D.subtasks.findIndex(function(s){return s.id === sourceSubId;});
   D.subtasks.splice(srcIdx, 1);
+  // After removal, recalculate target index
   var tgtIdx = D.subtasks.findIndex(function(s){return s.id === targetSubId;});
+  if(tgtIdx < 0) tgtIdx = D.subtasks.length;
   D.subtasks.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, sourceSub);
   save(); onDragEnd(); renderMain();
   toast('Subtasca moguda \u2713');
