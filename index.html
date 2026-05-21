@@ -887,12 +887,15 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .perm-user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
 .perm-user-name{font-size:13px;font-weight:600;color:var(--text)}
 .perm-user-role{font-size:11px;color:var(--muted);margin-top:1px}
-.perm-checks{display:flex;flex-direction:column;gap:6px}
-.perm-check{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:6px;transition:background var(--t)}
+.perm-checks{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}
+.perm-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;padding:5px 8px;border-radius:6px;transition:background var(--t)}
 .perm-check:hover{background:var(--s2);color:var(--text)}
 .perm-check.locked{opacity:.5;cursor:default}
 .perm-check input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
 .perm-check.locked input{cursor:not-allowed}
+
+.snav-export-btn{color:var(--accent)!important;font-weight:600!important}
+.snav-export-btn:hover{background:rgba(167,139,250,.15)!important}
 </style>
 </head>
 <body>
@@ -960,16 +963,10 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
         <nav class="settings-nav" id="settings-nav">
           <div class="settings-nav-group">
             <div class="settings-nav-label">Dades</div>
-            <button class="snav-btn on" data-admin="1" id="snav-export" onclick="setSTab('export')">
-              <span class="snav-icon">⬆</span>Exportar
-            </button>
             <button class="snav-btn" data-admin="1" id="snav-import" onclick="setSTab('import')">
               <span class="snav-icon">⬇</span>Importar
             </button>
-            <button class="snav-btn" data-admin="1" id="snav-migrate" onclick="setSTab('migrate')">
-              <span class="snav-icon">↗</span>Migrar v1
-            </button>
-          </div>
+            </div>
           <div class="settings-nav-group">
             <div class="settings-nav-label">Connexió</div>
             <button class="snav-btn" data-admin="1" id="snav-sync" onclick="setSTab('sync')">
@@ -999,50 +996,22 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
               <span class="snav-icon">ℹ</span>Info
             </button>
           </div>
+        <div class="settings-nav-group" style="margin-top:auto;padding:8px 0;border-top:1px solid var(--border)">
+            <button class="snav-btn snav-export-btn" id="snav-export" onclick="quickExport()">
+              <span class="snav-icon">⬇</span>Exportar JSON
+            </button>
+          </div>
         </nav>
         <div class="settings-content">
       <!-- EXPORT -->
-      <div class="spanel on" id="sp-export">
-        <div class="stat-row" id="export-stats"></div>
-        <div class="fr"><label>JSON de les dades actuals</label>
-          <textarea class="textarea-mono" id="export-ta" readonly onclick="this.select()"></textarea>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-ghost" onclick="copyExport()">📋 Copiar</button>
-          <button class="btn btn-prim" onclick="downloadExport()">⬇ Descarregar .json</button>
-        </div>
+      <div class="spanel" id="sp-export">
+        <div class="stat-row" id="export-stats">
       </div>
 
       <!-- IMPORT -->
       <div class="spanel" id="sp-import">
         <div id="import-gas-note" style="display:none;padding:10px 14px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.7">
           📦 <strong style="color:var(--text)">Migració des del sistema antic:</strong> exporta les dades del tracker local, copia el JSON i enganxa'l aquí. Es guardarà al Drive automàticament.
-        </div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Importa un fitxer JSON exportat prèviament.</p>
-        <div class="fr">
-          <label>Opció 1 — Seleccionar fitxer .json</label>
-          <div class="file-input-wrap">
-            <input type="file" accept=".json" onchange="handleFile(event)">
-            <div class="file-input-btn">📂 Seleccionar fitxer...</div>
-          </div>
-          <div id="file-name" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
-        </div>
-        <div class="fr">
-          <label>Opció 2 — Enganxar JSON</label>
-          <textarea class="textarea-mono" id="import-ta" placeholder='{"clients":[...],"areas":[...],...}'></textarea>
-        </div>
-        <div class="fr two">
-          <div>
-            <label>Mode d'importació</label>
-            <select id="import-mode">
-              <option value="replace">Reemplaçar tot</option>
-              <option value="merge">Fusionar (afegir sense eliminar)</option>
-            </select>
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-danger" onclick="doImport()">⚠ Importar</button>
-        </div>
       </div>
 
       <!-- SYNC -->
@@ -1052,55 +1021,41 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
           <div class="gas-url-row">
             <input type="text" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec">
             <button class="btn btn-ghost" onclick="testGAS()" style="white-space:nowrap;padding:8px 14px">Provar</button>
-          </div>
-          <div class="hint" style="margin-top:6px">Enganxa aquí la URL del Web App desplegat a Google Apps Script. Consulta el fitxer <strong>gas-setup.html</strong> per instruccions.</div>
-        </div>
-        <div class="gas-status-box" id="gas-status-box"></div>
-        <div class="btn-row" style="margin-top:6px">
-          <button class="btn btn-ghost" onclick="disconnectGAS()" id="gas-disconnect-btn" style="display:none">✕ Desconnectar</button>
-          <button class="btn btn-ghost" onclick="manualSync()">↻ Sincronitzar ara</button>
-          <button class="btn btn-prim" onclick="saveGASUrl()">Guardar URL</button>
-        </div>
-        <div class="sync-history" id="sync-history"></div>
       </div>
 
-      <!-- MIGRATE -->
-      <div class="spanel" id="sp-migrate">
-        <div style="text-align:center;padding:24px 0;color:var(--dim)">
-          <div style="font-size:40px;margin-bottom:12px">✅</div>
-          <div style="font-size:14px;color:var(--muted);font-weight:600;margin-bottom:6px">Migració automàtica activada</div>
-          <div style="font-size:12.5px;color:var(--dim);line-height:1.6;max-width:320px;margin:0 auto">Si obres el tracker en un navegador que té dades de la versió 1 (pt_data), es migraran automàticament en segon pla i veuràs un missatge de confirmació.
-        </div><!-- settings-content -->
+      <!-- DRIVE -->
+      <div class="spanel" id="sp-drive">
+        <div id="drive-content">
+      </div>
+
+      <!-- USERS -->
+      <div class="spanel" id="sp-users">
+        <div id="users-content">
+      </div>
+
+      <!-- PERMS -->
+      <div class="spanel" id="sp-perms">
+        <div id="perms-content">
+      </div>
+
+      <!-- VISUAL -->
+      <div class="spanel" id="sp-visual">
+        <div id="visual-content">
+      </div>
+
+      <!-- INFO -->
+      <div class="spanel" id="sp-info">
+        <div id="info-content">
+      </div>
+
+</div><!-- settings-content -->
       </div><!-- settings-layout -->
 </div>
         </div>
       </div>
 
-      <!-- USERS -->
-      <div class="spanel" id="sp-users">
-        <div id="users-content"></div>
-      </div>
-
-      <!-- DRIVE -->
-      <div class="spanel" id="sp-drive">
-        <div id="drive-content"></div>
-      </div>
-
-      <!-- VISUAL -->
-      <div class="spanel" id="sp-visual">
-        <div id="visual-content"></div>
-      </div>
-
-      <!-- PERMS -->
-      <div class="spanel" id="sp-perms">
-        <div id="perms-content"></div>
-      </div>
-
-      <!-- INFO -->
-      <div class="spanel" id="sp-info">
-        <div id="info-content"></div>
-      </div>
-    </div>
+      
+      </div></div>
   </div>
 </div>
 
@@ -2161,8 +2116,8 @@ function openSettings(){
 function closeSettings(){document.getElementById('modal-settings').classList.remove('open')}
 
 function setSTab(name){
-  const names=['export','import','sync','migrate','drive','users','perms','visual','info'];
-  const panels=['sp-export','sp-import','sp-sync','sp-migrate','sp-drive','sp-users','sp-perms','sp-visual','sp-info'];
+  const names=['export','import','sync','drive','users','perms','visual','info'];
+  const panels=['sp-export','sp-import','sp-sync','sp-drive','sp-users','sp-perms','sp-visual','sp-info'];
   // Update sidebar nav buttons
   document.querySelectorAll('.snav-btn').forEach(b=>{
     const id=b.id.replace('snav-','');
@@ -3839,32 +3794,6 @@ function renderVisualPanel(){
           </div>`;
         }).join('')}
       </div>
-    ${false?`<div class="fr" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2)">
-      <label style="display:flex;align-items:center;justify-content:space-between">
-        <span>🔧 Mode desenvolupador</span>
-        <button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="toggleDevMode()">
-          ${VS.devMode?'✓ Activat':'Desactivat'}
-        </button>
-      </label>
-      ${VS.devMode?`<div style="background:var(--s0);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase">Amplada columnes (px)</div>
-        ${[['task','Tasca'],['status','Estat'],['prio','Prioritat'],['dl','Data límit'],['type','Tipus'],['resp','Responsable']].map(([k,l])=>{
-          const defs={task:280,status:108,prio:80,dl:108,type:96,resp:140};
-          const w=(VS.colWidths||{})[k]||defs[k];
-          return '<div style="display:flex;align-items:center;gap:8px">'
-            +'<span style="width:78px;font-size:11.5px;color:var(--muted)">'+l+'</span>'
-            +'<input type="range" min="50" max="380" step="4" value="'+w+'"'
-            +' oninput="vsSetColWidthDev(\''+k+'\',this.value);document.getElementById(\'cw-'+k+'\').textContent=this.value+\'px\'"'
-            +' style="flex:1">'
-            +'<span id="cw-'+k+'" style="width:38px;text-align:right;font-size:11px;font-family:\'JetBrains Mono\',monospace;color:var(--dim)">'+w+'px</span>'
-            +'</div>';
-        }).join('')}
-        <div style="display:flex;gap:6px;margin-top:4px">
-          <button class="btn btn-ghost" style="font-size:11px" onclick="resetColWidths()">↺ Restablir</button>
-          <button class="btn btn-ghost" style="font-size:11px" onclick="exportDevConfig()">⬇ Exportar JSON</button>
-        </div>
-      </div>`:''}
-    </div>`:''}
     </div>`;
 }
 
@@ -4830,28 +4759,6 @@ function showFirstLoginWelcome(){
   document.getElementById('modal').classList.add('open');
 }
 
-// ─── DEV MODE ────────────────────────────────────────────────
-function toggleDevMode(){VS.devMode=!VS.devMode;vsSave();renderVisualPanel();}
-function vsSetColWidthDev(key,val){
-  if(!VS.colWidths)VS.colWidths={};
-  VS.colWidths[key]=+val;
-  document.querySelectorAll('.task-table .th-'+key).forEach(el=>{
-    el.style.width=val+'px';el.style.minWidth=val+'px';
-  });
-  vsSave();
-}
-function exportDevConfig(){
-  const cfg=JSON.stringify({
-    sidebarWidth:VS.sidebarWidth||256,
-    fontSize:VS.fontSize||'md',
-    fontFamily:VS.fontFamily||'outfit',
-    colWidths:VS.colWidths||{}
-  },null,2);
-  const a=document.createElement('a');
-  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(cfg);
-  a.download='tracker-layout.json';a.click();
-  toast('Configuració exportada ✓');
-}
 
 // ─── PERMISSIONS PANEL ─────────────────────────────────────
 function renderPermsPanel(){
@@ -4923,6 +4830,16 @@ function savePermChange(email,key,val){
   perms[email][key]=val;
   localStorage.setItem('pt_perms',JSON.stringify(perms));
   toast('Permís actualitzat ✓');
+}
+
+function quickExport(){
+  const payload={...D,_v:SCHEMA_VER,_exported:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='tracker-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('JSON exportat ✓');
 }
 
 function _initApp() {
