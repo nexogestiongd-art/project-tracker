@@ -898,6 +898,13 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .snav-export-btn:hover{background:rgba(167,139,250,.15)!important}
 
 /* ── LOADER ── */
+.skip-link{position:absolute;top:-40px;left:8px;background:var(--accent);color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px;z-index:10000;transition:top .15s}
+.skip-link:focus{top:8px;outline:2px solid #fff;outline-offset:2px}
+/* Focus rings — accessible by default */
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+/* Visually hidden — for screen readers only */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
 #pt-loader{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--border2);border-radius:24px;padding:7px 16px 7px 12px;display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:9998;animation:loaderFade .15s ease}
 #pt-loader.show{display:flex}
 #pt-loader .ldot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:loaderPulse 1s infinite}
@@ -935,15 +942,15 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 </style>
 </head>
 <body>
-
-<aside id="sidebar">
+<a href="#main" class="skip-link">Saltar al contingut principal</a>
+<aside id="sidebar" role="navigation" aria-label="Navegació de clients, àrees i projectes">
   <div class="sb-head">
-    <div class="sb-logo"><span class="sb-logo-dot"></span>PROJECT TRACKER<div class="sync-indicator" id="sync-indicator" title="Estat de sincronització"><div class="sync-dot local" id="sync-dot"></div><span class="sync-label local" id="sync-label">LOCAL</span></div></div>
+    <div class="sb-logo"><span class="sb-logo-dot"></span>PROJECT TRACKER<div class="sync-indicator" id="sync-indicator" title="Estat de sincronització" role="status" aria-label="Estat de sincronització"><div class="sync-dot local" id="sync-dot"></div><span class="sync-label local" id="sync-label">LOCAL</span></div></div>
   </div>
   <div class="sb-search" id="sb-search">
     <div class="sb-search-row">
-      <input type="text" id="sb-q" placeholder="Cercar..." oninput="sbSearch(this.value)" autocomplete="off">
-      <button class="sb-sort-btn" onclick="sbToggleSort()" id="sb-sort-btn" title="Ordenar A→Z">⇅</button>
+      <input type="text" id="sb-q" placeholder="Cercar..." oninput="sbSearch(this.value)" autocomplete="off" aria-label="Cercar al menú lateral">
+      <button class="sb-sort-btn" onclick="sbToggleSort()" id="sb-sort-btn" title="Ordenar A→Z" aria-label="Alternar ordenació alfabètica" aria-pressed="false">⇅</button>
     </div>
     <div class="sb-filter-row" id="sb-filter-row" style="display:none">
       <select id="sb-scope" onchange="sbSearch(document.getElementById('sb-q').value)">
@@ -960,24 +967,24 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
   <div class="sb-foot">
     <div id="sb-user-row"></div>
     <div class="sb-foot-row" id="sb-foot-row">
-      <button class="btn-dash" id="btn-dash" onclick="openDashboard()" title="Dashboard">📊</button>
+      <button class="btn-dash" id="btn-dash" onclick="openDashboard()" title="Dashboard" aria-label="Obrir dashboard">📊</button>
       <button class="btn-new-client" id="btn-new-client" onclick="openModal('client',null,null)">＋ Nou client</button>
-      <button class="btn-tools" id="btn-tools" onclick="openSettings()" title="Eines">⚙<span class="badge" id="mig-badge"></span></button>
+      <button class="btn-tools" id="btn-tools" onclick="openSettings()" title="Eines" aria-label="Obrir ajustos">⚙<span class="badge" id="mig-badge"></span></button>
     </div>
   </div>
 </aside>
-<div id="sb-resizer" title="Arrossega per redimensionar"></div>
-<main id="main">
+<div id="sb-resizer" title="Arrossega per redimensionar" role="separator" aria-orientation="vertical" aria-label="Redimensionar menú lateral"></div>
+<main id="main" role="main" aria-label="Contingut principal">
   <div id="topbar"></div>
   <div id="tabs" style="display:none"></div>
   <div id="content"></div>
 </main>
 
-<div class="overlay" id="modal">
+<div class="overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
   <div class="modal">
     <div class="modal-head">
       <div class="modal-title" id="m-title"></div>
-      <button class="modal-x" onclick="closeModal()">✕</button>
+      <button class="modal-x" onclick="closeModal()" aria-label="Tancar finestra">✕</button>
     </div>
     <div class="modal-body" id="m-body"></div>
     <div class="modal-foot">
@@ -988,11 +995,11 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="overlay" id="modal-settings">
+<div class="overlay" id="modal-settings" role="dialog" aria-modal="true" aria-label="Ajustos del tracker">
   <div class="modal settings-modal">
     <div class="modal-head">
       <div class="modal-title">⚙ Eines</div>
-      <button class="modal-x" onclick="closeSettings()">✕</button>
+      <button class="modal-x" onclick="closeSettings()" aria-label="Tancar ajustos">✕</button>
     </div>
     <div class="modal-body settings-body" style="padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column">
       <div class="settings-layout">
@@ -1003,7 +1010,7 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
   </div>
 </div>
 
-<div id="pt-loader"><span class="ldot"></span><span id="pt-loader-msg">Sincronitzant...</span></div>
+<div id="pt-loader" role="status" aria-live="polite"><span class="ldot" aria-hidden="true"></span><span id="pt-loader-msg">Sincronitzant...</span></div>
 <div id="login-gate">
   <div class="lg-card">
     <div class="lg-logo">
@@ -1029,7 +1036,7 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
     </div>
   </div>
 </div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -1180,7 +1187,7 @@ function refreshAvatarPreview(){
     ?(D.clients.find(c=>c.name===(ex?.value||''))?.avatar||null)
     :(pendingAvatar||null);
   if(currentAvatar){
-    el.innerHTML=`<img src="${currentAvatar}">`;
+    el.innerHTML=`<img src="${currentAvatar}" alt="">`;
   } else {
     el.style.background=selColor;el.innerHTML='';
   }
@@ -1524,7 +1531,7 @@ function getModalContent(type,id,parentId){
               <div><label>Data d'inici</label><input type="date" id="f-start" value="${ex?.start||''}"></div>
               <div><label>Data límit</label><input type="date" id="f-end" value="${ex?.end||''}"></div>
             </div>
-            <div class="fr"><label>Project Manager (responsable del projecte)</label><input type="text" id="f-pm" value="${E('manager')}" placeholder="Nom del project manager..."></div>`,
+            <div class="fr"><label>Project Manager (responsable del projecte)</label><input type="text" id="f-pm" value="${E('manager')}" placeholder="Nom del project manager..."></div>${id?`<div class="fr" style="display:flex;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeModal();setTimeout(()=>showEntityHistory('project','${id}',${JSON.stringify(ex?.name||'')}),100)" style="font-size:11px;padding:4px 10px" aria-label="Veure historial">📜 Veure historial</button></div>`:''}`,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const fd={name,desc:document.getElementById('f-desc').value.trim(),start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,manager:document.getElementById('f-pm').value.trim()};
@@ -1573,7 +1580,7 @@ function getModalContent(type,id,parentId){
               </select></div>
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
-            ${id?`<div class="fr"><label>📎 Adjunts</label><div id="files-sec-task-${id}"><div style="font-size:12px;color:var(--dim)">Carregant...</div></div></div>`:''}`;
+            ${id?`<div class="fr" style="display:flex;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeModal();setTimeout(()=>showEntityHistory('task','${id}',${JSON.stringify(ex?.name||'')}),100)" style="font-size:11px;padding:4px 10px" aria-label="Veure historial de canvis d'aquesta tasca">📜 Veure historial de canvis</button></div><div class="fr"><label>📎 Adjunts</label><div id="files-sec-task-${id}"><div style="font-size:12px;color:var(--dim)">Carregant...</div></div></div>`:''}`;
       })(),
       afterRender: id?()=>{
         const container=document.getElementById(`files-sec-task-${id}`);
@@ -1615,7 +1622,7 @@ function getModalContent(type,id,parentId){
               <div><label>Data límit ${inheritEnd&&!ex?.deadline?'<span style="color:var(--dim);font-size:9px">(heretada)</span>':''}</label><input type="date" id="f-dl" value="${inheritEnd}"></div>
             </div>
             <div class="fr"><label>Tècnic executor <span style="color:var(--dim);font-size:9px">(executa aquesta subtasca)</span></label><input type="text" id="f-ass" value="${E('assignee')}" placeholder="${defaultExec?`Per defecte: ${defaultExec}`:'Nom o inicials...'}"></div>
-            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>`;
+            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>${id?`<div class="fr" style="display:flex;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeModal();setTimeout(()=>showEntityHistory('subtask','${id}',${JSON.stringify(ex?.name||'')}),100)" style="font-size:11px;padding:4px 10px" aria-label="Veure historial de canvis">📜 Veure historial</button></div>`:''}`;
       })(),
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
@@ -1666,7 +1673,7 @@ function openModal(type,id,parentId){
     const existing=id?D.clients.find(c=>c.id===id):null;
     const el=document.getElementById('av-preview');
     if(el){
-      if(existing?.avatar){el.innerHTML=`<img src="${existing.avatar}">`;el.style.background='';document.getElementById('av-remove-btn').style.display='';}
+      if(existing?.avatar){el.innerHTML=`<img src="${existing.avatar}" alt="">`;el.style.background='';document.getElementById('av-remove-btn').style.display='';}
       else{el.style.background=selColor;el.innerHTML='';}
     }
   }
@@ -1935,7 +1942,7 @@ function renderSidebar(){
       <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="treeRowToggle(event,'client','${cl.id}')">
         <button class="tree-toggle${isOpen?' open':''}" onclick="event.stopPropagation();xClient('${cl.id}')">▶</button>
         <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}')" style="cursor:pointer">
-          ${cl.avatar?`<img class="cl-avatar" src="${cl.avatar}">`:''}
+          ${cl.avatar?`<img class="cl-avatar" src="${cl.avatar}" alt="">`:''}
         </div>
         <div class="tree-client-name" onclick="selClient('${cl.id}')" style="cursor:pointer">${esc(cl.name)}</div>
         <div class="tree-count">${done}/${total}</div>
@@ -2012,7 +2019,7 @@ function renderMain(){
       </div>
       <div class="tb-title">
         ${client?.avatar
-          ?`<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 8px rgba(0,0,0,.5)"><img src="${client.avatar}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
+          ?`<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 8px rgba(0,0,0,.5)"><img src="${client.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
           :`<span class="tb-dot" style="background:${client?.color||'var(--accent)'};box-shadow:0 0 8px ${client?.color||'var(--accent)'}55"></span>`
         }
         ${esc(proj.name)}
@@ -2499,30 +2506,73 @@ function renderAuditPanel(){
     return;
   }
   el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <div style="font-size:13px;color:var(--muted);flex:1;line-height:1.6">
         Registre cronològic de tots els canvis (qui, què, quan).
       </div>
-      <select id="audit-entity-filter" onchange="loadAuditLog()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 10px;outline:none">
-        <option value="">Totes les entitats</option>
-        <option value="client">Clients</option>
-        <option value="area">Àrees</option>
-        <option value="project">Projectes</option>
-        <option value="task">Tasques</option>
-        <option value="subtask">Subtasques</option>
-        <option value="milestone">Fites</option>
-        <option value="checklist">Checklists</option>
-      </select>
-      <select id="audit-limit" onchange="loadAuditLog()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 10px;outline:none">
-        <option value="50">Últimes 50</option>
-        <option value="100" selected>Últimes 100</option>
-        <option value="200">Últimes 200</option>
-      </select>
-      <button class="btn btn-ghost" onclick="loadAuditLog()" style="font-size:12px;padding:5px 14px">↻ Recarregar</button>
+      <button class="btn btn-ghost" onclick="loadAuditLog()" style="font-size:12px;padding:5px 14px" aria-label="Recarregar registre d'audit">↻ Recarregar</button>
     </div>
-    <div id="audit-list" style="background:var(--s0);border:1px solid var(--border);border-radius:8px;max-height:60vh;overflow-y:auto"></div>`;
+    <div class="audit-filters" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px;padding:10px 12px;background:var(--s0);border:1px solid var(--border);border-radius:8px">
+      <div>
+        <label for="audit-entity-filter" style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Entitat</label>
+        <select id="audit-entity-filter" onchange="loadAuditLog()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 9px;outline:none;width:100%">
+          <option value="">Totes</option>
+          <option value="client">Clients</option>
+          <option value="area">Àrees</option>
+          <option value="project">Projectes</option>
+          <option value="task">Tasques</option>
+          <option value="subtask">Subtasques</option>
+          <option value="milestone">Fites</option>
+          <option value="checklist">Checklists</option>
+        </select>
+      </div>
+      <div>
+        <label for="audit-action-filter" style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Acció</label>
+        <select id="audit-action-filter" onchange="renderAuditList()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 9px;outline:none;width:100%">
+          <option value="">Totes</option>
+          <option value="create">Crear</option>
+          <option value="update">Editar</option>
+          <option value="delete">Eliminar</option>
+        </select>
+      </div>
+      <div>
+        <label for="audit-user-filter" style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Usuari</label>
+        <input type="text" id="audit-user-filter" oninput="renderAuditList()" placeholder="nom o email..." style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 9px;outline:none;width:100%" aria-label="Filtrar audit per usuari">
+      </div>
+      <div>
+        <label for="audit-date-from" style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Des de</label>
+        <input type="date" id="audit-date-from" onchange="renderAuditList()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 9px;outline:none;width:100%;color-scheme:dark" aria-label="Filtrar audit des de data">
+      </div>
+      <div>
+        <label for="audit-date-to" style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Fins a</label>
+        <input type="date" id="audit-date-to" onchange="renderAuditList()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 9px;outline:none;width:100%;color-scheme:dark" aria-label="Filtrar audit fins a data">
+      </div>
+      <div>
+        <label for="audit-limit" style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Mostrar</label>
+        <select id="audit-limit" onchange="loadAuditLog()" style="background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:12px;padding:5px 9px;outline:none;width:100%">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="200">200</option>
+          <option value="500">500</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn btn-ghost" onclick="auditClearFilters()" style="font-size:11px;padding:5px 10px;width:100%" aria-label="Netejar tots els filtres">✕ Netejar</button>
+      </div>
+    </div>
+    <div id="audit-summary" style="font-size:11px;color:var(--muted);margin-bottom:8px"></div>
+    <div id="audit-list" style="background:var(--s0);border:1px solid var(--border);border-radius:8px;max-height:55vh;overflow-y:auto"></div>`;
   loadAuditLog();
 }
+
+function auditClearFilters(){
+  const ids = ['audit-entity-filter','audit-action-filter','audit-user-filter','audit-date-from','audit-date-to'];
+  ids.forEach(function(id){ const el = document.getElementById(id); if(el) el.value = ''; });
+  loadAuditLog();
+}
+
+
+let _auditEntries = [];
 
 function loadAuditLog(){
   const list = document.getElementById('audit-list');
@@ -2532,46 +2582,92 @@ function loadAuditLog(){
   const filter = document.getElementById('audit-entity-filter')?.value || '';
   gasRun('getAuditLog', limit, filter)
     .then(function(json){
-      const entries = JSON.parse(json || '[]');
-      if(!entries.length){
-        list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--dim);font-size:13px">Encara no hi ha entrades al registre.</div>';
-        return;
-      }
-      const actionLabel = {create:'➕ Crear', update:'✎ Editar', 'delete':'🗑 Eliminar'};
-      const actionColor = {create:'var(--g-done)', update:'var(--warn)', 'delete':'var(--p-high)'};
-      const entityLabel = {client:'Client',area:'Àrea',project:'Projecte',task:'Tasca',subtask:'Subtasca',milestone:'Fita',checklist:'Checklist'};
-      list.innerHTML = entries.map(function(e){
-        const t = new Date(e.timestamp);
-        const tStr = t.toLocaleDateString('ca-ES',{day:'2-digit',month:'short',year:'2-digit'}) + ' ' + t.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'});
-        let detailsHtml = '';
-        if(e.details && typeof e.details === 'object'){
-          const fields = Object.keys(e.details);
-          if(fields.length){
-            detailsHtml = '<div style="margin-top:6px;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace;background:var(--s2);padding:6px 10px;border-radius:5px;line-height:1.6">'
-              + fields.map(function(k){
-                  const c = e.details[k];
-                  const from = c && c.from !== undefined ? String(c.from).slice(0,60) : '';
-                  const to = c && c.to !== undefined ? String(c.to).slice(0,60) : '';
-                  return '<div><strong style="color:var(--text)">'+esc(k)+'</strong>: <span style="color:var(--p-high)">'+esc(from)+'</span> → <span style="color:var(--g-done)">'+esc(to)+'</span></div>';
-                }).join('')
-              + '</div>';
-          }
-        }
-        return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12.5px">'
-          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
-          +   '<span style="color:'+actionColor[e.action]+';font-weight:600;font-size:11px;font-family:JetBrains Mono,monospace">'+(actionLabel[e.action]||e.action)+'</span>'
-          +   '<span style="color:var(--text);font-weight:500">'+esc(entityLabel[e.entity]||e.entity)+': '+esc(e.entityName||e.entityId||'—')+'</span>'
-          +   '<span style="color:var(--muted);font-size:11px;margin-left:auto">'+esc(e.userName||e.userEmail)+'</span>'
-          +   '<span style="color:var(--dim);font-size:11px;font-family:JetBrains Mono,monospace">'+esc(tStr)+'</span>'
-          + '</div>'
-          + detailsHtml
-          + '</div>';
-      }).join('');
+      _auditEntries = JSON.parse(json || '[]');
+      renderAuditList();
     })
     .catch(function(err){
       list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--p-high);font-size:12px">Error: ' + esc(err.message) + '</div>';
     });
 }
+
+function renderAuditList(){
+  const list = document.getElementById('audit-list');
+  const summary = document.getElementById('audit-summary');
+  if(!list) return;
+
+  // Read client-side filters
+  const actionFilter = document.getElementById('audit-action-filter')?.value || '';
+  const userFilter = (document.getElementById('audit-user-filter')?.value || '').trim().toLowerCase();
+  const dateFrom = document.getElementById('audit-date-from')?.value || '';
+  const dateTo = document.getElementById('audit-date-to')?.value || '';
+
+  let entries = _auditEntries;
+
+  if(actionFilter) entries = entries.filter(function(e){ return e.action === actionFilter; });
+  if(userFilter){
+    entries = entries.filter(function(e){
+      return (e.userEmail||'').toLowerCase().includes(userFilter)
+          || (e.userName||'').toLowerCase().includes(userFilter);
+    });
+  }
+  if(dateFrom){
+    entries = entries.filter(function(e){
+      return (e.timestamp||'').slice(0,10) >= dateFrom;
+    });
+  }
+  if(dateTo){
+    entries = entries.filter(function(e){
+      return (e.timestamp||'').slice(0,10) <= dateTo;
+    });
+  }
+
+  // Summary text
+  if(summary){
+    const total = _auditEntries.length;
+    const shown = entries.length;
+    summary.textContent = shown === total
+      ? `Mostrant ${total} entrade${total !== 1 ? 's' : ''}`
+      : `Mostrant ${shown} de ${total} entrade${total !== 1 ? 's' : ''} (filtres aplicats)`;
+  }
+
+  if(!entries.length){
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--dim);font-size:13px">' + (_auditEntries.length ? 'Cap entrada coincideix amb els filtres.' : 'Encara no hi ha entrades al registre.') + '</div>';
+    return;
+  }
+
+  const actionLabel = {create:'➕ Crear', update:'✎ Editar', 'delete':'🗑 Eliminar'};
+  const actionColor = {create:'var(--g-done)', update:'var(--warn)', 'delete':'var(--p-high)'};
+  const entityLabel = {client:'Client',area:'Àrea',project:'Projecte',task:'Tasca',subtask:'Subtasca',milestone:'Fita',checklist:'Checklist'};
+
+  list.innerHTML = entries.map(function(e){
+    const t = new Date(e.timestamp);
+    const tStr = t.toLocaleDateString('ca-ES',{day:'2-digit',month:'short',year:'2-digit'}) + ' ' + t.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'});
+    let detailsHtml = '';
+    if(e.details && typeof e.details === 'object'){
+      const fields = Object.keys(e.details);
+      if(fields.length){
+        detailsHtml = '<div style="margin-top:6px;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace;background:var(--s2);padding:6px 10px;border-radius:5px;line-height:1.6">'
+          + fields.map(function(k){
+              const c = e.details[k];
+              const from = c && c.from !== undefined ? String(c.from).slice(0,60) : '';
+              const to = c && c.to !== undefined ? String(c.to).slice(0,60) : '';
+              return '<div><strong style="color:var(--text)">'+esc(k)+'</strong>: <span style="color:var(--p-high)">'+esc(from)+'</span> → <span style="color:var(--g-done)">'+esc(to)+'</span></div>';
+            }).join('')
+          + '</div>';
+      }
+    }
+    return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12.5px">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      +   '<span style="color:'+actionColor[e.action]+';font-weight:600;font-size:11px;font-family:JetBrains Mono,monospace">'+(actionLabel[e.action]||e.action)+'</span>'
+      +   '<span style="color:var(--text);font-weight:500">'+esc(entityLabel[e.entity]||e.entity)+': '+esc(e.entityName||e.entityId||'—')+'</span>'
+      +   '<span style="color:var(--muted);font-size:11px;margin-left:auto">'+esc(e.userName||e.userEmail)+'</span>'
+      +   '<span style="color:var(--dim);font-size:11px;font-family:JetBrains Mono,monospace">'+esc(tStr)+'</span>'
+      + '</div>'
+      + detailsHtml
+      + '</div>';
+  }).join('');
+}
+
 
 function renderInfoPanel(){
   const raw=localStorage.getItem('pt3_d')||'{}';
@@ -3343,7 +3439,7 @@ function renderClientOverview(clientId){
       <div class="breadcrumb"><span style="color:${client.color||'var(--muted)'}">Vista general</span></div>
       <div class="tb-title">
         ${client.avatar
-          ?`<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${client.avatar}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
+          ?`<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${client.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
           :`<span class="tb-dot" style="background:${client.color||'var(--accent)'}"></span>`}
         ${esc(client.name)}
         <button class="ta" onclick="openModal('client','${client.id}',null)" style="opacity:.4;font-size:12px">✎</button>
@@ -3404,7 +3500,7 @@ function renderClientOverview(clientId){
   content.innerHTML=`<div class="co-wrap">
     <div class="co-header">
       <div class="co-avatar" style="background:${client.color||'var(--s3)'}">
-        ${client.avatar?`<img src="${client.avatar}">`:`<span style="font-size:18px;font-weight:800;color:#fff;font-family:'Syne',sans-serif">${esc(client.name[0])}</span>`}
+        ${client.avatar?`<img src="${client.avatar}" alt="">`:`<span style="font-size:18px;font-weight:800;color:#fff;font-family:'Syne',sans-serif">${esc(client.name[0])}</span>`}
       </div>
       <div><div class="co-client-name">${esc(client.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">${areas.length} àree${areas.length!==1?'s':''} · ${totalProjs} projecte${totalProjs!==1?'s':''}</div></div>
       <div class="co-stats">
@@ -3756,7 +3852,7 @@ function renderDbOverview(el,clients,projects,allTasks,overdueTasks,tod){
     return`<div class="db-client-card" onclick="selClient('${cl.id}')">
       <div class="db-client-head">
         <div class="db-client-avatar" style="background:${cl.color||'var(--s3)'}">
-          ${cl.avatar?`<img src="${cl.avatar}">`:(cl.name[0]||'?').toUpperCase()}
+          ${cl.avatar?`<img src="${cl.avatar}" alt="">`:(cl.name[0]||'?').toUpperCase()}
         </div>
         <div class="db-client-name">${esc(cl.name)}</div>
         <div class="rag-dot rag-${rag}" title="${{red:'Tasques fora de termini',amber:'Tasques en risc (<7 dies)',green:'Tot a temps'}[rag]}"></div>
@@ -4340,7 +4436,11 @@ let sbSortAlpha=false;
 
 function sbToggleSort(){
   sbSortAlpha=!sbSortAlpha;
-  document.getElementById('sb-sort-btn')?.classList.toggle('active',sbSortAlpha);
+  const btn = document.getElementById('sb-sort-btn');
+  if(btn){
+    btn.classList.toggle('active', sbSortAlpha);
+    btn.setAttribute('aria-pressed', String(sbSortAlpha));
+  }
   sbSearch(document.getElementById('sb-q')?.value||'');
 }
 
@@ -4656,7 +4756,18 @@ function getAttachments(entityType,entityId){
 }
 function addAttachment(att){
   if(!D.attachments)D.attachments=[];
-  D.attachments.push({id:uid(),...att,addedAt:new Date().toISOString()});
+  const now = new Date().toISOString();
+  const me = meName();
+  // addedAt kept for backwards compat with existing data
+  D.attachments.push({
+    id: uid(),
+    ...att,
+    addedAt: now,
+    createdAt: now,
+    createdBy: me,
+    updatedAt: now,
+    updatedBy: me
+  });
   save();
 }
 function removeAttachment(attId,deleteFromDrive=false){
@@ -4727,7 +4838,7 @@ function renderFilesSection(container,entityType,entityId,folderId){
       <div class="file-icon">${fileIcon(a.mimeType,a.name)}</div>
       <div class="file-info">
         <div class="file-name" title="${esc(a.name)}">${esc(a.name)}</div>
-        <div class="file-meta">${a.source==='drive'?'Drive':'Enllaç'}${a.size?' · '+fmtFileSize(a.size):''}${a.addedAt?' · '+new Date(a.addedAt).toLocaleDateString('ca-ES',{day:'2-digit',month:'short'}):''}
+        <div class="file-meta">${a.source==='drive'?'Drive':'Enllaç'}${a.size?' · '+fmtFileSize(a.size):''}${(a.createdAt||a.addedAt)?' · '+new Date(a.createdAt||a.addedAt).toLocaleDateString('ca-ES',{day:'2-digit',month:'short'}):''}${a.createdBy?' · '+esc(a.createdBy):''}
         </div>
       </div>
       <button class="file-del-btn" onclick="event.preventDefault();event.stopPropagation();delFileAtt('${a.id}','${entityType}','${entityId}','${folderId||''}')" title="Eliminar">✕</button>
@@ -5158,30 +5269,158 @@ function disconnectBackend() {
 }
 
 // ─── FIRST LOGIN WELCOME ────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// PER-ENTITY HISTORY (audit log filtered by entityId)
+// ═══════════════════════════════════════════════════════════
+function showEntityHistory(entityType, entityId, entityName){
+  if(!isConnected()){ toast('Cal connexió al backend per veure l\'historial'); return; }
+  if(!isAdmin()){ toast('Accés restringit a administradors'); return; }
+
+  const body = document.getElementById('m-body');
+  const title = document.getElementById('m-title');
+  if(!body || !title) return;
+
+  const entityLabels = { client:'client', area:'àrea', project:'projecte', task:'tasca', subtask:'subtasca', milestone:'fita', checklist:'checklist' };
+  title.textContent = '📜 Historial de ' + (entityLabels[entityType] || entityType);
+
+  body.innerHTML = `
+    <div style="margin-bottom:10px;padding:10px 14px;background:var(--s0);border:1px solid var(--border);border-radius:7px">
+      <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${esc(entityLabels[entityType]||entityType)}</div>
+      <div style="font-size:13.5px;font-weight:600;color:var(--text)">${esc(entityName || '(sense nom)')}</div>
+      <div style="font-size:10.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:2px">ID: ${esc(entityId)}</div>
+    </div>
+    <div id="ent-hist-list" style="max-height:50vh;overflow-y:auto;background:var(--s0);border:1px solid var(--border);border-radius:7px">
+      <div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">⏳ Carregant historial...</div>
+    </div>`;
+
+  modalSave = function(){ closeModal(); };
+  document.getElementById('m-save').textContent = 'Tancar';
+  document.getElementById('modal').classList.add('open');
+
+  // Fetch audit log and filter by this entityId
+  gasRun('getAuditLog', 500, '')
+    .then(function(json){
+      const all = JSON.parse(json || '[]');
+      const entries = all.filter(function(e){ return e.entityId === entityId; });
+      const listEl = document.getElementById('ent-hist-list');
+      if(!listEl) return;
+
+      if(!entries.length){
+        listEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--dim);font-size:13px">Aquesta entitat encara no té entrades al registre.<br><br><span style="font-size:11px">L\'audit log captura tots els canvis a partir de la versió v3.1.0.</span></div>';
+        return;
+      }
+
+      const actionLabel = { create:'➕ Creat', update:'✎ Editat', 'delete':'🗑 Eliminat' };
+      const actionColor = { create:'var(--g-done)', update:'var(--warn)', 'delete':'var(--p-high)' };
+
+      listEl.innerHTML = entries.map(function(e){
+        const t = new Date(e.timestamp);
+        const tStr = t.toLocaleDateString('ca-ES',{day:'2-digit',month:'short',year:'2-digit'}) + ' a les ' + t.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'});
+        let detailsHtml = '';
+        if(e.details && typeof e.details === 'object'){
+          const fields = Object.keys(e.details);
+          if(fields.length){
+            detailsHtml = '<div style="margin-top:6px;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace;background:var(--s2);padding:6px 10px;border-radius:5px;line-height:1.7">'
+              + fields.map(function(k){
+                  const c = e.details[k];
+                  const from = c && c.from !== undefined && c.from !== null ? String(c.from).slice(0,80) : '∅';
+                  const to = c && c.to !== undefined && c.to !== null ? String(c.to).slice(0,80) : '∅';
+                  return '<div><strong style="color:var(--text)">'+esc(k)+'</strong>: <span style="color:var(--p-high);text-decoration:line-through">'+esc(from)+'</span> → <span style="color:var(--g-done)">'+esc(to)+'</span></div>';
+                }).join('')
+              + '</div>';
+          }
+        }
+        return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12.5px">'
+          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          +   '<span style="color:'+(actionColor[e.action]||'var(--muted)')+';font-weight:600;font-size:11px;font-family:JetBrains Mono,monospace">'+esc(actionLabel[e.action]||e.action)+'</span>'
+          +   '<span style="color:var(--text);font-size:12px;flex:1">'+esc(e.userName||e.userEmail||'?')+'</span>'
+          +   '<span style="color:var(--dim);font-size:10.5px;font-family:JetBrains Mono,monospace">'+esc(tStr)+'</span>'
+          + '</div>'
+          + detailsHtml
+          + '</div>';
+      }).join('');
+    })
+    .catch(function(err){
+      const listEl = document.getElementById('ent-hist-list');
+      if(listEl) listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--p-high);font-size:12px">Error: ' + esc(err.message) + '</div>';
+    });
+}
+
 function showFirstLoginWelcome(){
-  const body=document.getElementById('m-body');
-  const title=document.getElementById('m-title');
-  if(!body||!title)return;
-  title.textContent='Benvingut/da!';
-  body.innerHTML=`
-    <div style="text-align:center;padding:8px 0 14px">
-      <div style="font-size:44px;margin-bottom:10px">👋</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:17px;color:var(--text);margin-bottom:6px">
+  // Honor "do not show again" preference
+  try { if(localStorage.getItem('pt_onboarding_dismissed') === '1') return; } catch(e){}
+
+  const body = document.getElementById('m-body');
+  const title = document.getElementById('m-title');
+  if(!body || !title) return;
+
+  const isAdminRole = CURRENT_USER.role === 'admin';
+  const roleIcon = isAdminRole ? '👑' : '🔧';
+  const roleLabel = isAdminRole ? 'Administrador' : 'Tècnic';
+
+  const adminTips = `
+    <ul style="margin:0;padding-left:20px;font-size:12.5px;color:var(--muted);line-height:1.9">
+      <li>Crear i organitzar <strong style="color:var(--text)">clients, àrees i projectes</strong> des del menú lateral</li>
+      <li>Gestionar usuaris i permisos a <strong style="color:var(--text)">⚙ Eines → 👥 Usuaris</strong></li>
+      <li>Veure tot el registre d'activitat a <strong style="color:var(--text)">⚙ Eines → 📜 Audit log</strong></li>
+      <li>Exportar i importar dades a <strong style="color:var(--text)">⚙ Eines → ⬆/⬇</strong></li>
+    </ul>`;
+
+  const techTips = `
+    <ul style="margin:0;padding-left:20px;font-size:12.5px;color:var(--muted);line-height:1.9">
+      <li>Veure els projectes assignats al menú lateral esquerre</li>
+      <li>Marcar tasques com a <strong style="color:var(--text)">fetes</strong> amb un clic a la casella</li>
+      <li>Editar el text d'una tasca clicant-la directament</li>
+      <li>Pujar fitxers de Drive amb el botó <strong style="color:var(--text)">📎</strong></li>
+      <li>Canviar l'aspecte (tema, mida, tipografia) a <strong style="color:var(--text)">⚙ Eines → 🎨 Visual</strong></li>
+    </ul>`;
+
+  title.textContent = 'Benvingut/da al Project Tracker!';
+  body.innerHTML = `
+    <div style="text-align:center;padding:4px 0 14px">
+      <div style="font-size:44px;margin-bottom:10px" aria-hidden="true">👋</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:17px;color:var(--text);margin-bottom:4px">
         Hola, ${esc(CURRENT_USER.name||CURRENT_USER.email)}!
       </div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:14px">
-        Primer accés detectat.<br>El teu compte ha estat verificat correctament ✓
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">
+        El teu compte ha estat verificat correctament ✓
       </div>
-      <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:12px 16px;text-align:left">
-        <div style="font-size:12px;color:var(--muted);line-height:1.9">
-          <strong style="color:var(--text)">Rol:</strong> ${CURRENT_USER.role==='admin'?'👑 Administrador':'🔧 Tècnic'}<br>
-          <strong style="color:var(--text)">Accés:</strong> ${CURRENT_USER.role==='admin'?'Complet (clients, àrees, projectes, tasques)':'Tasques assignades i projectes on ets PM'}
-        </div>
+    </div>
+    <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:12.5px;color:var(--text);margin-bottom:6px">
+        <strong>${roleIcon} ${roleLabel}</strong>
       </div>
-    </div>`;
-  modalSave=()=>closeModal();
-  document.getElementById('m-save').textContent='Entrar al tracker';
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.7">
+        ${isAdminRole
+          ? 'Tens accés complet: pots crear i editar clients, àrees, projectes, tasques i gestionar tots els usuaris i permisos.'
+          : 'Pots veure i actualitzar les tasques on ets responsable o tècnic assignat, pujar fitxers i marcar el progrés. La creació de projectes i la gestió d\'usuaris és per a l\'administrador.'}
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:8px">Què pots fer ara</div>
+      ${isAdminRole ? adminTips : techTips}
+    </div>
+    <div style="margin-bottom:6px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:8px">Trucs útils</div>
+      <ul style="margin:0;padding-left:20px;font-size:12.5px;color:var(--muted);line-height:1.9">
+        <li><strong style="color:var(--text)">Arrossega</strong> una tasca a un altre projecte del menú lateral per moure-la</li>
+        <li>Fes <strong style="color:var(--text)">clic dret</strong> sobre el text d'una tasca per editar-la in-place</li>
+        <li>Premsa <strong style="color:var(--text)">Esc</strong> per tancar modals i ajustos ràpidament</li>
+      </ul>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:14px;padding:8px 12px;background:var(--s0);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:normal;letter-spacing:0;text-transform:none">
+      <input type="checkbox" id="onboard-dismiss" style="accent-color:var(--accent)">
+      <span>No tornar a mostrar aquesta benvinguda en aquest dispositiu</span>
+    </label>`;
+
+  modalSave = function(){
+    const dismiss = document.getElementById('onboard-dismiss')?.checked;
+    if(dismiss){ try { localStorage.setItem('pt_onboarding_dismissed','1'); } catch(e){} }
+    closeModal();
+  };
+  document.getElementById('m-save').textContent = 'Entendre i començar';
   document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('m-save')?.focus(), 150);
 }
 
 
@@ -5271,7 +5510,31 @@ function _initApp() {
   // Modal listeners
   const mSave = document.getElementById('m-save');
   if(mSave) mSave.addEventListener('click', ()=>{ if(modalSave) modalSave(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+  // Focus trap + restore on modal close
+let _modalLastFocus = null;
+function _getFocusableIn(el){
+  return Array.from(el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function(n){
+    return !n.disabled && n.offsetParent !== null;
+  });
+}
+function _trapFocus(e, modalEl){
+  if(e.key !== 'Tab') return;
+  const focusable = _getFocusableIn(modalEl);
+  if(!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length-1];
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    // Close topmost open modal
+    if(document.getElementById('modal-settings')?.classList.contains('open')){ closeSettings(); return; }
+    if(document.getElementById('modal')?.classList.contains('open')){ closeModal(); return; }
+  }
+  // Focus trap if a modal is open
+  const openModalEl = document.querySelector('.overlay.open .modal');
+  if(openModalEl) _trapFocus(e, openModalEl);
+});
   const mSettings = document.getElementById('modal-settings');
   if(mSettings) mSettings.addEventListener('click', e=>{ if(e.target.id==='modal-settings') closeSettings(); });
 
