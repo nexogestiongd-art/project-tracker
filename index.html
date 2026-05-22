@@ -1272,10 +1272,18 @@ async function pullFromGAS(){
 }
 
 async function manualSync(){
-  if(!gasUrl){showGASStatus('err','Configura la URL del GAS primer.');return;}
-  const ok=await pullFromGAS();
-  if(ok){renderAll();toast('Sincronitzat correctament ✓');}
-  else toast('Error de sincronització — revisa la URL');
+  if(!isConnected()){ toast('No connectat al backend'); return; }
+  setSyncState('syncing');
+  try {
+    const dataJson = await gasRun('getData');
+    await _mergeRemoteData(dataJson);
+    setSyncState('synced');
+    renderAll();
+    toast('Sincronitzat ✓');
+  } catch(e){
+    setSyncState('error');
+    toast('Error: ' + e.message);
+  }
 }
 
 async function testGAS(){
@@ -1378,21 +1386,20 @@ async function manualSync(){
 // ── DEBOUNCED BACKEND SAVE ────────────────────────────────────
 let _saveTimer = null;
 let _savePendingPayload = null;
-const SAVE_DEBOUNCE_MS = 1500;
+const SAVE_DEBOUNCE_MS = 800;  // reduced from 1500 for safer flush before tab close
 
 function _flushBackendSave(){
   if(!_savePendingPayload || !isConnected()) return;
   const payload = _savePendingPayload;
   _savePendingPayload = null;
+  const ts = JSON.parse(payload)._savedAt;
+  console.debug('[flush] sending to backend, _savedAt=' + ts + ', size=' + payload.length + 'B');
   setSyncState('syncing');
-  // gasRun shows its own loader; suppress it here to avoid flicker
-  // (gasRun already detects activeRequests, but saveData specifically skips loader)
   gasRun('saveData', payload)
-    .then(()=> setSyncState('synced'))
+    .then(()=> { console.debug('[flush] ✓ backend saved _savedAt=' + ts); setSyncState('synced'); })
     .catch(e => {
       setSyncState('error');
-      console.error('Backend save error:', e);
-      // On failure, re-queue if nothing newer is pending
+      console.error('[flush] ✗ backend save error:', e);
       if(!_savePendingPayload) _savePendingPayload = payload;
     });
 }
@@ -1403,33 +1410,53 @@ function flushSaveNow(){
 }
 
 function save(){
-  // Guard: only persist when there's an active session.
-  // Prevents orphaned localStorage writes after logout/token expiry.
   if(!isConnected()) return;
-  const payload = JSON.stringify({...D, _v:SCHEMA_VER, _savedAt:Date.now()});
-  // 1. Local cache (used as fast first-paint after successful auth)
+  const ts = Date.now();
+  const payload = JSON.stringify({...D, _v:SCHEMA_VER, _savedAt:ts});
   localStorage.setItem('pt3_d', payload);
   localStorage.setItem('pt3_s', JSON.stringify({
     projectId: ST.projectId, tab: ST.tab,
     xClients: [...ST.xClients], xAreas: [...ST.xAreas]
   }));
-  // 2. Debounced backend save
   _savePendingPayload = payload;
   setSyncState('pending');
   if(_saveTimer) clearTimeout(_saveTimer);
   _saveTimer = setTimeout(_flushBackendSave, SAVE_DEBOUNCE_MS);
+  console.debug('[save] localStorage updated, _savedAt=' + ts + ', size=' + payload.length + 'B, debounced flush in ' + SAVE_DEBOUNCE_MS + 'ms');
 }
 
 // Flush pending save on tab close to avoid losing data
-window.addEventListener('beforeunload', function(e){
-  if(_savePendingPayload && isConnected()){
-    // Best effort: use sendBeacon if available
+// On page hide (more reliable than beforeunload — fires on mobile, tab close, navigation)
+function _flushOnUnload(){
+  if(!_savePendingPayload || !isConnected()) return;
+  const payload = _savePendingPayload;
+  const ts = JSON.parse(payload)._savedAt;
+  const body = JSON.stringify({ token: GAS_TOKEN, method: 'saveData', args: [payload] });
+  console.debug('[unload] flushing _savedAt=' + ts + ', size=' + body.length + 'B');
+  // Try fetch with keepalive first (more reliable, larger payload limit)
+  try {
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: body,
+      keepalive: true
+    }).catch(function(e){ console.warn('[unload] fetch failed:', e); });
+    console.debug('[unload] fetch+keepalive dispatched');
+  } catch(err){
+    // Fallback to sendBeacon
     try {
-      const body = JSON.stringify({ token: GAS_TOKEN, method: 'saveData', args: [_savePendingPayload] });
       const blob = new Blob([body], { type: 'text/plain;charset=utf-8' });
-      navigator.sendBeacon(GAS_URL, blob);
-    } catch(err){}
+      const ok = navigator.sendBeacon(GAS_URL, blob);
+      console.debug('[unload] sendBeacon fallback ' + (ok ? '✓' : '✗'));
+    } catch(e2){ console.warn('[unload] sendBeacon failed:', e2); }
   }
+}
+// pagehide fires on both regular unload AND when iOS suspends the tab (more reliable than beforeunload)
+window.addEventListener('pagehide', _flushOnUnload);
+window.addEventListener('beforeunload', _flushOnUnload);
+// Also flush when tab becomes hidden (user switches apps/tabs)
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'hidden') _flushOnUnload();
 });
 
 function load(){
@@ -1446,21 +1473,42 @@ function load(){
   }catch(e){}
 }
 
+// ─── SHARED: Merge remote data with timestamp guard ──────────────────
+async function _mergeRemoteData(dataJson){
+  if(!dataJson) return false;
+  const remote = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+  const localRaw = localStorage.getItem('pt3_d');
+  const localTs  = localRaw ? (JSON.parse(localRaw)._savedAt || 0) : 0;
+  const remoteTs = remote._savedAt || 0;
+  console.debug('[merge] localTs=' + localTs + ' remoteTs=' + remoteTs + ' diff=' + (localTs - remoteTs) + 'ms');
+  if(remoteTs >= localTs){
+    console.debug('[merge] → using REMOTE (remote.tasks=' + (remote.tasks||[]).length + ', remote.subtasks=' + (remote.subtasks||[]).length + ')');
+    D = {
+      clients:remote.clients||[], areas:remote.areas||[], projects:remote.projects||[],
+      tasks:remote.tasks||[], subtasks:remote.subtasks||[], milestones:remote.milestones||[],
+      checklists:remote.checklists||[], attachments:remote.attachments||[]
+    };
+    localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:remoteTs||Date.now()}));
+  } else {
+    const localParsed = JSON.parse(localRaw);
+    console.warn('[merge] → LOCAL newer (local.tasks=' + (localParsed.tasks||[]).length + ', local.subtasks=' + (localParsed.subtasks||[]).length + '). Pushing to backend.');
+    D = {
+      clients:localParsed.clients||[], areas:localParsed.areas||[], projects:localParsed.projects||[],
+      tasks:localParsed.tasks||[], subtasks:localParsed.subtasks||[], milestones:localParsed.milestones||[],
+      checklists:localParsed.checklists||[], attachments:localParsed.attachments||[]
+    };
+    gasRun('saveData', localRaw).catch(function(e){ console.warn('[Sync] Push failed:', e); });
+  }
+  return true;
+}
+
 function gasLoad(){
   if(!IS_GAS){return;}
   setSyncState('syncing');
   gasRun('getData')
-    .then(json=>{
-      if(!json)return;
-      const p=JSON.parse(json);
-      D={clients:p.clients||[],areas:p.areas||[],projects:p.projects||[],
-         tasks:p.tasks||[],subtasks:p.subtasks||[],milestones:p.milestones||[],
-         checklists:p.checklists||[],attachments:p.attachments||[]};
-      localStorage.setItem('pt3_d',JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
-      setSyncState('synced');
-      renderAll();
-    })
-    .catch(e=>{setSyncState('error');console.error('GAS load error:',e);});
+    .then(function(json){ return _mergeRemoteData(json); })
+    .then(function(updated){ setSyncState('synced'); if(updated) renderAll(); })
+    .catch(function(e){ setSyncState('error'); console.error('GAS load error:',e); });
 }
 
 // ─── UTILS ───────────────────────────────────────────────────
@@ -1509,7 +1557,12 @@ function getModalContent(type,id,parentId){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const avatarVal=pendingAvatar===null?(ex?.avatar||null):pendingAvatar===''?null:pendingAvatar;
         if(id){const o=D.clients.find(c=>c.id===id);o.name=name;o.color=selColor;o.avatar=avatarVal;audit(o,true);toast('Client actualitzat')}
-        else{D.clients.push(audit({id:uid(),name,color:selColor,avatar:avatarVal},false));toast('Client creat ✓')}
+        else{const _newCl=audit({id:uid(),name,color:selColor,avatar:avatarVal},false);
+        D.clients.push(_newCl);
+        toast('Client creat ✓');
+        if(isConnected()) ensureClientFolder(_newCl.id)
+          .then(function(fid){ if(fid) toast('📁 Carpeta Drive creada ✓'); })
+          .catch(function(e){ console.warn('Drive folder error:',e); });}
         pendingAvatar=null;save();closeModal();renderAll();
       }
     },
@@ -1519,7 +1572,10 @@ function getModalContent(type,id,parentId){
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         if(id){const o=D.areas.find(a=>a.id===id);o.name=name;audit(o,true);toast('Àrea actualitzada')}
-        else{const a=audit({id:uid(),clientId:parentId,name},false);D.areas.push(a);ST.xAreas.add(a.id);toast('Àrea creada ✓')}
+        else{const a=audit({id:uid(),clientId:parentId,name},false);D.areas.push(a);ST.xAreas.add(a.id);toast('Àrea creada ✓');
+        if(isConnected()) ensureAreaFolder(a.id)
+          .then(function(fid){ if(fid) toast('📁 Carpeta Drive creada ✓'); })
+          .catch(function(e){ console.warn('Drive folder error:',e); });}
         save();closeModal();renderAll();
       }
     },
@@ -1537,7 +1593,10 @@ function getModalContent(type,id,parentId){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const fd={name,desc:document.getElementById('f-desc').value.trim(),start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,manager:document.getElementById('f-pm').value.trim()};
         if(id){const o=D.projects.find(p=>p.id===id);Object.assign(o,fd);audit(o,true);toast('Projecte actualitzat')}
-        else{const p=audit({id:uid(),areaId:parentId,...fd},false);D.projects.push(p);ST.projectId=p.id;toast('Projecte creat ✓')}
+        else{const p=audit({id:uid(),areaId:parentId,...fd},false);D.projects.push(p);ST.projectId=p.id;toast('Projecte creat ✓');
+        if(isConnected()) ensureProjectFolder(p.id)
+          .then(function(fid){ if(fid) toast('📁 Carpeta Drive creada ✓'); })
+          .catch(function(e){ console.warn('Drive folder error:',e); });}
         save();closeModal();renderAll();
       }
     },
@@ -4793,9 +4852,20 @@ function extractDriveId(url){
 // ── AUTO-CREATE FOLDER HELPERS ───────────────────────────────
 async function ensureClientFolder(clientId){
   const cl=D.clients.find(c=>c.id===clientId);
-  if(!cl||cl.driveFolderId)return cl?.driveFolderId||null;
-  if(IS_GAS){
-    try{const j=await gasRun('createDriveFolder',cl.name,'');const f=JSON.parse(j);if(f?.id){cl.driveFolderId=f.id;save();}return f?.id||null;}catch(e){return null;}
+  if(!cl){console.warn('[Drive] ensureClientFolder: client not found', clientId);return null;}
+  if(cl.driveFolderId){console.debug('[Drive] ensureClientFolder: already has folder', cl.driveFolderId);return cl.driveFolderId;}
+  if(isConnected()){
+    try{
+      console.debug('[Drive] ensureClientFolder: creating folder for "' + cl.name + '" at Drive root');
+      const j=await gasRun('createDriveFolder',cl.name,'');
+      const f=JSON.parse(j);
+      console.debug('[Drive] ensureClientFolder: backend returned', f);
+      if(f?.id){cl.driveFolderId=f.id;save();}
+      return f?.id||null;
+    }catch(e){
+      console.error('[Drive] ensureClientFolder failed:', e.message);
+      return null;
+    }
   }
   if(!driveConnected())return null;
   const folder=await driveCreateFolder(cl.name,null);
@@ -4804,11 +4874,23 @@ async function ensureClientFolder(clientId){
 }
 
 async function ensureAreaFolder(areaId){
-  const area=D.areas.find(a=>a.id===areaId);if(!area)return null;
-  if(area.driveFolderId)return area.driveFolderId;
+  const area=D.areas.find(a=>a.id===areaId);
+  if(!area){console.warn('[Drive] ensureAreaFolder: area not found', areaId);return null;}
+  if(area.driveFolderId){console.debug('[Drive] ensureAreaFolder: already has folder', area.driveFolderId);return area.driveFolderId;}
   const parentId=await ensureClientFolder(area.clientId);
-  if(IS_GAS){
-    try{const j=await gasRun('createDriveFolder',area.name,parentId||'');const f=JSON.parse(j);if(f?.id){area.driveFolderId=f.id;save();}return f?.id||null;}catch(e){return null;}
+  console.debug('[Drive] ensureAreaFolder: parentClientFolder=' + parentId);
+  if(isConnected()){
+    try{
+      console.debug('[Drive] ensureAreaFolder: creating folder for "' + area.name + '" inside ' + (parentId||'(root)'));
+      const j=await gasRun('createDriveFolder',area.name,parentId||'');
+      const f=JSON.parse(j);
+      console.debug('[Drive] ensureAreaFolder: backend returned', f);
+      if(f?.id){area.driveFolderId=f.id;save();}
+      return f?.id||null;
+    }catch(e){
+      console.error('[Drive] ensureAreaFolder failed:', e.message);
+      return null;
+    }
   }
   if(!driveConnected())return null;
   const folder=await driveCreateFolder(area.name,parentId);
@@ -4817,11 +4899,23 @@ async function ensureAreaFolder(areaId){
 }
 
 async function ensureProjectFolder(projectId){
-  const proj=D.projects.find(p=>p.id===projectId);if(!proj)return null;
-  if(proj.driveFolderId)return proj.driveFolderId;
+  const proj=D.projects.find(p=>p.id===projectId);
+  if(!proj){console.warn('[Drive] ensureProjectFolder: project not found', projectId);return null;}
+  if(proj.driveFolderId){console.debug('[Drive] ensureProjectFolder: already has folder', proj.driveFolderId);return proj.driveFolderId;}
   const parentId=await ensureAreaFolder(proj.areaId);
-  if(IS_GAS){
-    try{const j=await gasRun('createDriveFolder',proj.name,parentId||'');const f=JSON.parse(j);if(f?.id){proj.driveFolderId=f.id;save();}return f?.id||null;}catch(e){return null;}
+  console.debug('[Drive] ensureProjectFolder: parentAreaFolder=' + parentId);
+  if(isConnected()){
+    try{
+      console.debug('[Drive] ensureProjectFolder: creating folder for "' + proj.name + '" inside ' + (parentId||'(root)'));
+      const j=await gasRun('createDriveFolder',proj.name,parentId||'');
+      const f=JSON.parse(j);
+      console.debug('[Drive] ensureProjectFolder: backend returned', f);
+      if(f?.id){proj.driveFolderId=f.id;save();}
+      return f?.id||null;
+    }catch(e){
+      console.error('[Drive] ensureProjectFolder failed:', e.message);
+      return null;
+    }
   }
   if(!driveConnected())return null;
   const folder=await driveCreateFolder(proj.name,parentId);
@@ -5150,139 +5244,37 @@ function openBackendSetup() {
     const url   = document.getElementById('bk-url').value.trim();
     const token = document.getElementById('bk-token').value.trim();
     if(!url || !token) { showBkStatus('err','Cal omplir URL i token'); return; }
-
     showBkStatus('loading','Validant connexió...');
     try {
       const result = await backendPing(url, token);
-      if (result.error) { showBkStatus('err', result.error); return; }
-      if (!result.result || !result.result.user) {
-        showBkStatus('err','Resposta inesperada del backend');
-        return;
-      }
-      saveBackendConfig(url, token);
-      CURRENT_USER = result.result.user;
-      if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
-      showBkStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
-      setTimeout(()=> {
-        closeModal();
-        setSyncState('syncing');
-        // Load data
-        gasRun('getData').then(dataJson => {
-          if (dataJson) {
-            const p = JSON.parse(dataJson);
-            D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[] };
-            localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
-          }
-          setSyncState('synced');
-          renderAll();
-          toast('Connexió establerta ✓');
-        });
-      }, 700);
-    } catch(err) {
-      showBkStatus('err', '✗ ' + err.message);
-    }
-  };
-
-  document.getElementById('modal').classList.add('open');
-  setTimeout(()=>{ const f = document.getElementById('bk-url'); if(f) f.focus(); }, 150);
-}
-
-function showBkStatus(type, msg) {
-  const el = document.getElementById('bk-status');
-  if(!el) return;
-  el.style.display = 'block';
-  el.textContent = msg;
-  const styles = {
-    loading: 'background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa',
-    ok:      'background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#34d399',
-    err:     'background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#f87171'
-  };
-  el.style.cssText = 'font-size:12px;margin-top:6px;padding:8px 12px;border-radius:6px;display:block;' + styles[type];
-}
-
-function showLoginGate(){
-  const el = document.getElementById('login-gate');
-  if(el){
-    el.classList.remove('hidden');
-    // Pre-fill if we have existing values
-    const urlIn = document.getElementById('lg-url');
-    const tokIn = document.getElementById('lg-token');
-    if(urlIn && GAS_URL) urlIn.value = GAS_URL;
-    if(tokIn && GAS_TOKEN) tokIn.value = GAS_TOKEN;
-    setTimeout(()=>{ (urlIn?.value ? tokIn : urlIn)?.focus(); }, 100);
-  }
-}
-
-function hideLoginGate(){
-  const el = document.getElementById('login-gate');
-  if(el) el.classList.add('hidden');
-}
-
-function lgStatus(type, msg){
-  const el = document.getElementById('lg-status');
-  if(!el) return;
-  el.className = 'lg-status show ' + type;
-  el.textContent = msg;
-}
-
-async function loginConnect(){
-  const url = document.getElementById('lg-url')?.value.trim();
-  const token = document.getElementById('lg-token')?.value.trim();
-  if(!url || !token){ lgStatus('err', 'Omple URL i token'); return; }
-  const btn = document.getElementById('lg-connect-btn');
-  if(btn){ btn.disabled = true; btn.textContent = 'Validant...'; }
-  lgStatus('loading', 'Validant credencials...');
-  backendPing(url, token)
-    .then(result => {
       if(result.error) throw new Error(result.error);
       if(!result.result || !result.result.user) throw new Error('Resposta inesperada del backend');
       saveBackendConfig(url, token);
       CURRENT_USER = result.result.user;
       if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
-      lgStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
-      setTimeout(()=>{
-        hideLoginGate();
-        load(); autoMigrateV1(); applyColWidths(); checkMigrationBadge();
-        renderAll();
+      showBkStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
+      setTimeout(async () => {
+        closeModal();
         setSyncState('syncing');
-        gasRun('getData').then(dataJson => {
-          if(dataJson){
-            const remote = JSON.parse(dataJson);
-            // Compare timestamps: if local is newer than remote, don't overwrite.
-            // This handles the race condition where sendBeacon fires just before
-            // getData: local has the new data, remote might not yet.
-            const localRaw = localStorage.getItem('pt3_d');
-            const localTs = localRaw ? (JSON.parse(localRaw)._savedAt || 0) : 0;
-            const remoteTs = remote._savedAt || 0;
-            if(remoteTs >= localTs){
-              // Remote is same age or newer → use it
-              D = { clients:remote.clients||[], areas:remote.areas||[], projects:remote.projects||[], tasks:remote.tasks||[], subtasks:remote.subtasks||[], milestones:remote.milestones||[], checklists:remote.checklists||[], attachments:remote.attachments||[] };
-              localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:remoteTs||Date.now()}));
-            } else {
-              // Local is newer → keep local, push to backend
-              console.info('[Sync] Local data newer than remote, pushing local to backend');
-              const localParsed = JSON.parse(localRaw);
-              D = { clients:localParsed.clients||[], areas:localParsed.areas||[], projects:localParsed.projects||[], tasks:localParsed.tasks||[], subtasks:localParsed.subtasks||[], milestones:localParsed.milestones||[], checklists:localParsed.checklists||[], attachments:localParsed.attachments||[] };
-              // Force immediate backend save with local data
-              gasRun('saveData', localRaw).catch(e => console.warn('Push local→remote failed:', e));
-            }
-          }
+        try {
+          const dataJson = await gasRun('getData');
+          await _mergeRemoteData(dataJson);
           setSyncState('synced');
           renderAll();
-          if(result.result.firstLogin) setTimeout(()=>showFirstLoginWelcome(), 400);
-        });
+          if(result.result.firstLogin) setTimeout(function(){ showFirstLoginWelcome(); }, 400);
+        } catch(e2) { setSyncState('error'); console.error('getData error:', e2); }
       }, 600);
-    })
-    .catch(err => {
-      if(btn){ btn.disabled = false; btn.textContent = 'Connectar'; }
-      // Translate generic errors to user-friendly messages
-      let msg = err.message;
+    } catch(err) {
+      let msg = err.message || String(err);
       if(msg.includes('404')) msg = 'URL del backend no trobada (404). Comprova que la URL acabi en /exec i que el desplegament sigui "Accessible per a tothom".';
       else if(msg.includes('401') || msg.includes('403')) msg = 'Token incorrecte o sense permisos. Demana un nou token a l\'administrador.';
       else if(msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'No s\'ha pogut connectar. Comprova la teva connexió a internet i la URL del backend.';
       else if(msg.includes('Unexpected token') || msg.includes('JSON')) msg = 'La URL no correspon a un backend vàlid. Ha de ser una URL de Google Apps Script.';
-      lgStatus('err','✗ ' + msg);
-    });
+      showBkStatus('err','✗ ' + msg);
+    }
+  };
+
+  setTimeout(()=>document.getElementById('bk-url')?.focus(), 150);
 }
 
 function disconnectBackend() {
@@ -5312,7 +5304,7 @@ function _injectHistoryBtn(type, id, name){
   b.textContent = '📜 Veure historial de canvis';
   b.addEventListener('click', function(){
     closeModal();
-    setTimeout(function(){ showEntityHistory(type, id, name); }, 100);
+    setTimeout(function(){ showEntityHistory(type, id, name); }, 200); // Safety timeout to ensure modal is fully closed
   });
   btn.appendChild(b);
   body.appendChild(btn);
@@ -5614,15 +5606,8 @@ document.addEventListener('keydown', function(e){
         renderAll();
         return gasRun('getData');
       })
-      .then(dataJson => {
-        if(!dataJson) return;
-        const p = JSON.parse(dataJson);
-        D = {
-          clients:p.clients||[], areas:p.areas||[], projects:p.projects||[],
-          tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[],
-          checklists:p.checklists||[], attachments:p.attachments||[]
-        };
-        localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
+      .then(async function(dataJson){
+        await _mergeRemoteData(dataJson);
         setSyncState('synced');
         renderAll();
       })
