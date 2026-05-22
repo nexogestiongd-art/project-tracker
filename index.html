@@ -1531,7 +1531,8 @@ function getModalContent(type,id,parentId){
               <div><label>Data d'inici</label><input type="date" id="f-start" value="${ex?.start||''}"></div>
               <div><label>Data límit</label><input type="date" id="f-end" value="${ex?.end||''}"></div>
             </div>
-            <div class="fr"><label>Project Manager (responsable del projecte)</label><input type="text" id="f-pm" value="${E('manager')}" placeholder="Nom del project manager..."></div>${id?`<div class="fr" style="display:flex;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeModal();setTimeout(()=>showEntityHistory('project','${id}',${JSON.stringify(ex?.name||'')}),100)" style="font-size:11px;padding:4px 10px" aria-label="Veure historial">📜 Veure historial</button></div>`:''}`,
+            <div class="fr"><label>Project Manager (responsable del projecte)</label><input type="text" id="f-pm" value="${E('manager')}" placeholder="Nom del project manager..."></div>`,
+      afterRender: id ? ()=>{ _injectHistoryBtn('project', id, ex?.name||''); } : null,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const fd={name,desc:document.getElementById('f-desc').value.trim(),start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,manager:document.getElementById('f-pm').value.trim()};
@@ -1580,11 +1581,13 @@ function getModalContent(type,id,parentId){
               </select></div>
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
-            ${id?`<div class="fr" style="display:flex;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeModal();setTimeout(()=>showEntityHistory('task','${id}',${JSON.stringify(ex?.name||'')}),100)" style="font-size:11px;padding:4px 10px" aria-label="Veure historial de canvis d'aquesta tasca">📜 Veure historial de canvis</button></div><div class="fr"><label>📎 Adjunts</label><div id="files-sec-task-${id}"><div style="font-size:12px;color:var(--dim)">Carregant...</div></div></div>`:''}`;
+            `;
       })(),
       afterRender: id?()=>{
         const container=document.getElementById(`files-sec-task-${id}`);
         if(container)renderFilesSection(container,'task',id,'');
+        // Inject history button at top of modal
+        _injectHistoryBtn('task', id, ex?.name||'');
       }:null,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
@@ -1622,8 +1625,9 @@ function getModalContent(type,id,parentId){
               <div><label>Data límit ${inheritEnd&&!ex?.deadline?'<span style="color:var(--dim);font-size:9px">(heretada)</span>':''}</label><input type="date" id="f-dl" value="${inheritEnd}"></div>
             </div>
             <div class="fr"><label>Tècnic executor <span style="color:var(--dim);font-size:9px">(executa aquesta subtasca)</span></label><input type="text" id="f-ass" value="${E('assignee')}" placeholder="${defaultExec?`Per defecte: ${defaultExec}`:'Nom o inicials...'}"></div>
-            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>${id?`<div class="fr" style="display:flex;justify-content:flex-end"><button type="button" class="btn btn-ghost" onclick="closeModal();setTimeout(()=>showEntityHistory('subtask','${id}',${JSON.stringify(ex?.name||'')}),100)" style="font-size:11px;padding:4px 10px" aria-label="Veure historial de canvis">📜 Veure historial</button></div>`:''}`;
+            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>`;
       })(),
+      afterRender: id ? ()=>{ _injectHistoryBtn('subtask', id, ex?.name||''); } : null,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const parentTask=ex?D.tasks.find(t=>t.id===ex.taskId):D.tasks.find(t=>t.id===parentId);
@@ -1884,7 +1888,7 @@ function renderSidebar(){
   const btnTools=document.getElementById('btn-tools');
   const btnDash=document.getElementById('btn-dash');
   if(btnNew)btnNew.style.display=isAdmin()?'':'none';
-  if(btnTools)btnTools.style.display=isAdmin()?'':'none';
+  if(btnTools)btnTools.style.display=isConnected()?'':'none'; // Tech sees Settings too (Visual + Logout only)
   if(btnDash)btnDash.classList.toggle('active',ST.view==='dashboard');
 
   const el=document.getElementById('tree');
@@ -5243,9 +5247,25 @@ async function loginConnect(){
         setSyncState('syncing');
         gasRun('getData').then(dataJson => {
           if(dataJson){
-            const p = JSON.parse(dataJson);
-            D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[] };
-            localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
+            const remote = JSON.parse(dataJson);
+            // Compare timestamps: if local is newer than remote, don't overwrite.
+            // This handles the race condition where sendBeacon fires just before
+            // getData: local has the new data, remote might not yet.
+            const localRaw = localStorage.getItem('pt3_d');
+            const localTs = localRaw ? (JSON.parse(localRaw)._savedAt || 0) : 0;
+            const remoteTs = remote._savedAt || 0;
+            if(remoteTs >= localTs){
+              // Remote is same age or newer → use it
+              D = { clients:remote.clients||[], areas:remote.areas||[], projects:remote.projects||[], tasks:remote.tasks||[], subtasks:remote.subtasks||[], milestones:remote.milestones||[], checklists:remote.checklists||[], attachments:remote.attachments||[] };
+              localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:remoteTs||Date.now()}));
+            } else {
+              // Local is newer → keep local, push to backend
+              console.info('[Sync] Local data newer than remote, pushing local to backend');
+              const localParsed = JSON.parse(localRaw);
+              D = { clients:localParsed.clients||[], areas:localParsed.areas||[], projects:localParsed.projects||[], tasks:localParsed.tasks||[], subtasks:localParsed.subtasks||[], milestones:localParsed.milestones||[], checklists:localParsed.checklists||[], attachments:localParsed.attachments||[] };
+              // Force immediate backend save with local data
+              gasRun('saveData', localRaw).catch(e => console.warn('Push local→remote failed:', e));
+            }
           }
           setSyncState('synced');
           renderAll();
@@ -5255,7 +5275,13 @@ async function loginConnect(){
     })
     .catch(err => {
       if(btn){ btn.disabled = false; btn.textContent = 'Connectar'; }
-      lgStatus('err','✗ ' + err.message);
+      // Translate generic errors to user-friendly messages
+      let msg = err.message;
+      if(msg.includes('404')) msg = 'URL del backend no trobada (404). Comprova que la URL acabi en /exec i que el desplegament sigui "Accessible per a tothom".';
+      else if(msg.includes('401') || msg.includes('403')) msg = 'Token incorrecte o sense permisos. Demana un nou token a l\'administrador.';
+      else if(msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'No s\'ha pogut connectar. Comprova la teva connexió a internet i la URL del backend.';
+      else if(msg.includes('Unexpected token') || msg.includes('JSON')) msg = 'La URL no correspon a un backend vàlid. Ha de ser una URL de Google Apps Script.';
+      lgStatus('err','✗ ' + msg);
     });
 }
 
@@ -5272,6 +5298,34 @@ function disconnectBackend() {
 // ═══════════════════════════════════════════════════════════
 // PER-ENTITY HISTORY (audit log filtered by entityId)
 // ═══════════════════════════════════════════════════════════
+function _injectHistoryBtn(type, id, name){
+  if(!isAdmin() || !isConnected()) return;
+  const body = document.getElementById('m-body');
+  if(!body) return;
+  const btn = document.createElement('div');
+  btn.style.cssText = 'display:flex;justify-content:flex-end;margin-top:10px';
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn btn-ghost';
+  b.style.cssText = 'font-size:11px;padding:4px 10px';
+  b.setAttribute('aria-label', 'Veure historial de canvis');
+  b.textContent = '📜 Veure historial de canvis';
+  b.addEventListener('click', function(){
+    closeModal();
+    setTimeout(function(){ showEntityHistory(type, id, name); }, 100);
+  });
+  btn.appendChild(b);
+  body.appendChild(btn);
+}
+
+function _openEntityHistory(btn){
+  const type = btn.dataset.type;
+  const id   = btn.dataset.id;
+  const name = btn.dataset.name;
+  closeModal();
+  setTimeout(function(){ showEntityHistory(type, id, name); }, 100);
+}
+
 function showEntityHistory(entityType, entityId, entityName){
   if(!isConnected()){ toast('Cal connexió al backend per veure l\'historial'); return; }
   if(!isAdmin()){ toast('Accés restringit a administradors'); return; }
