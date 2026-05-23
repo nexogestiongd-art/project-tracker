@@ -5711,7 +5711,7 @@ document.addEventListener('keydown', function(e){
 
 // ═══════════════════════════════════════════════════════════
 // MODULE: workspace-docs (Sprint 1)
-// Creació de Docs/Sheets/Slides/Forms des de tasques i subtasques.
+// Creació de Docs/Sheets/Slides/Forms i carpetes des de tasques i subtasques.
 // Quan migrem a build modular, aquest bloc va a /src/scripts/workspace-docs.js
 // ═══════════════════════════════════════════════════════════
 const WsDoc = {
@@ -5723,31 +5723,78 @@ const WsDoc = {
     form:   { label: 'Formulari',      icon: '📝' }
   },
 
-  // Els docs de tasques i subtasques van a la carpeta del projecte.
-  // Cap carpeta de tasca/subtasca es crea tret que s'indiqui explícitament.
+  // Retorna la carpeta destí per a una entitat:
+  // – Si la tasca/subtasca ja té la seva pròpia carpeta, l'utilitza.
+  // – Si no, puja a la carpeta del projecte (mai crea carpetes automàticament).
   async ensureEntityFolder(entityType, entityId) {
     if (entityType === 'task') {
       const task = D.tasks.find(function(t){ return t.id === entityId; });
       if (!task) return null;
+      if (task.driveFolderId) return task.driveFolderId;
       return ensureProjectFolder(task.projectId);
     }
     if (entityType === 'subtask') {
       const sub = D.subtasks.find(function(s){ return s.id === entityId; });
       if (!sub) return null;
+      if (sub.driveFolderId) return sub.driveFolderId;
       const parentTask = D.tasks.find(function(t){ return t.id === sub.taskId; });
       if (!parentTask) return null;
+      if (parentTask.driveFolderId) return parentTask.driveFolderId;
       return ensureProjectFolder(parentTask.projectId);
     }
     return null;
   },
 
+  // Crea la carpeta de Drive per a una tasca o subtasca i desa l'ID.
+  async createFolderForEntity(entityType, entity) {
+    var existing = entityType === 'task'
+      ? (D.tasks.find(function(t){ return t.id === entity.id; }) || {}).driveFolderId
+      : (D.subtasks.find(function(s){ return s.id === entity.id; }) || {}).driveFolderId;
+    if (existing) {
+      toast('Ja existeix una carpeta per aquesta ' + (entityType === 'task' ? 'tasca' : 'subtasca'));
+      return existing;
+    }
+    toast('Creant carpeta...');
+    var parentId;
+    if (entityType === 'task') {
+      var task = D.tasks.find(function(t){ return t.id === entity.id; });
+      parentId = task ? await ensureProjectFolder(task.projectId) : null;
+    } else {
+      var sub = D.subtasks.find(function(s){ return s.id === entity.id; });
+      var pt  = sub ? D.tasks.find(function(t){ return t.id === sub.taskId; }) : null;
+      parentId = pt
+        ? (pt.driveFolderId || await ensureProjectFolder(pt.projectId))
+        : null;
+    }
+    if (!parentId) { toast('Error: no s\'ha pogut obtenir la carpeta pare'); return null; }
+    var json   = await gasRun('createDriveFolder', entity.name, parentId);
+    var folder = JSON.parse(json);
+    if (folder && folder.id) {
+      if (entityType === 'task') {
+        var t2 = D.tasks.find(function(t){ return t.id === entity.id; });
+        if (t2) t2.driveFolderId = folder.id;
+      } else {
+        var s2 = D.subtasks.find(function(s){ return s.id === entity.id; });
+        if (s2) s2.driveFolderId = folder.id;
+      }
+      save();
+      toast('✓ Carpeta creada a Drive');
+    }
+    return folder ? folder.id : null;
+  },
+
   renderModalSection: function() {
     return '<div class="fr" style="border-top:1px solid var(--border);padding-top:14px;margin-top:8px">'
-      + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text);margin-bottom:8px">'
+      + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Drive (opcional)</div>'
+      + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text);margin-bottom:10px">'
+      + '<input type="checkbox" id="wsdoc-create-folder" style="accent-color:var(--accent);width:15px;height:15px">'
+      + '<span>📁 Crear carpeta de Drive per a aquesta tasca</span>'
+      + '</label>'
+      + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text);margin-bottom:6px">'
       + '<input type="checkbox" id="wsdoc-create" style="accent-color:var(--accent);width:15px;height:15px" onchange="WsDoc.toggleSection(this.checked)">'
       + '<span>📄 Crear document de Workspace en guardar</span>'
       + '</label>'
-      + '<div id="wsdoc-options" style="display:none;background:var(--s0);border:1px solid var(--border);border-radius:7px;padding:12px;margin-top:6px">'
+      + '<div id="wsdoc-options" style="display:none;background:var(--s0);border:1px solid var(--border);border-radius:7px;padding:12px;margin-top:4px;margin-left:23px">'
       + '<label style="font-size:10px;margin-bottom:4px">Tipus</label>'
       + '<select id="wsdoc-type">'
       + '<option value="doc">🔵 Document de Google</option>'
@@ -5756,53 +5803,72 @@ const WsDoc = {
       + '<option value="form">📝 Formulari</option>'
       + '</select>'
       + '<div style="font-size:11px;color:var(--dim);line-height:1.5;margin-top:8px">'
-      + 'Es crearà al Drive amb el nom de la tasca, dins de la carpeta del projecte, i quedarà vinculat com a adjunt.'
+      + 'Si has marcat carpeta, el document hi anirà dins. Sinó, va a la carpeta del projecte.'
       + '</div>'
       + '</div>'
       + '</div>';
   },
 
   toggleSection: function(checked) {
-    const opts = document.getElementById('wsdoc-options');
+    var opts = document.getElementById('wsdoc-options');
     if (opts) opts.style.display = checked ? '' : 'none';
   },
 
-  // Llegeix l'estat del modal de forma síncrona.
-  // Ha de cridar-se ABANS de closeModal().
   readModalState: function() {
-    const chk = document.getElementById('wsdoc-create');
-    if (!chk || !chk.checked) return null;
-    return { type: (document.getElementById('wsdoc-type') || {}).value || 'doc' };
+    var chkDoc    = document.getElementById('wsdoc-create');
+    var chkFolder = document.getElementById('wsdoc-create-folder');
+    var docOn     = chkDoc    && chkDoc.checked;
+    var folderOn  = chkFolder && chkFolder.checked;
+    if (!docOn && !folderOn) return null;
+    return {
+      type:         docOn ? ((document.getElementById('wsdoc-type') || {}).value || 'doc') : null,
+      createFolder: !!folderOn
+    };
   },
 
-  // state: resultat de readModalState(), capturat abans de closeModal()
   createForEntity: async function(entityType, entity, state) {
     if (!state) return null;
-    if (!isConnected()) { toast('Cal connexió al backend per crear documents'); return null; }
+    if (!isConnected()) { toast('Cal connexió al backend per crear elements a Drive'); return null; }
     try {
-      toast('Creant ' + WsDoc.TYPES[state.type].label.toLowerCase() + '...');
-      const folderId = await WsDoc.ensureEntityFolder(entityType, entity.id);
-      if (!folderId) throw new Error('No s\'ha pogut obtenir la carpeta destí');
-      const json = await gasRun('createWorkspaceDoc', state.type, entity.name, folderId);
-      const result = JSON.parse(json);
-      addAttachment({
-        entityType: entityType,
-        entityId: entity.id,
-        name: result.name,
-        source: 'drive',
-        driveFileId: result.id,
-        url: result.url,
-        mimeType: result.mimeType,
-        size: 0,
-        createdFromEntity: true,
-        wsDocType: result.type
-      });
-      toast('✓ ' + WsDoc.TYPES[state.type].label + ' creat');
-      try { window.open(result.url, '_blank', 'noopener'); } catch(e) {}
-      return result;
+      // Pas 1: carpeta (si s'ha demanat)
+      if (state.createFolder) {
+        await WsDoc.createFolderForEntity(entityType, entity);
+      }
+      // Pas 2: document (si s'ha demanat)
+      if (state.type) {
+        // Comprovació duplicat
+        var existingDoc = (D.attachments || []).find(function(a) {
+          return a.entityType === entityType && a.entityId === entity.id && a.createdFromEntity;
+        });
+        if (existingDoc) {
+          toast('Ja existeix "' + existingDoc.name + '" — obrint...');
+          try { window.open(existingDoc.url, '_blank', 'noopener'); } catch(e) {}
+          return null;
+        }
+        toast('Creant ' + WsDoc.TYPES[state.type].label.toLowerCase() + '...');
+        var folderId = await WsDoc.ensureEntityFolder(entityType, entity.id);
+        if (!folderId) throw new Error('No s\'ha pogut obtenir la carpeta destí');
+        var json   = await gasRun('createWorkspaceDoc', state.type, entity.name, folderId);
+        var result = JSON.parse(json);
+        addAttachment({
+          entityType:        entityType,
+          entityId:          entity.id,
+          name:              result.name,
+          source:            'drive',
+          driveFileId:       result.id,
+          url:               result.url,
+          mimeType:          result.mimeType,
+          size:              0,
+          createdFromEntity: true,
+          wsDocType:         result.type
+        });
+        toast('✓ ' + WsDoc.TYPES[state.type].label + ' creat');
+        try { window.open(result.url, '_blank', 'noopener'); } catch(e) {}
+        return result;
+      }
     } catch(e) {
       console.error('[WsDoc] createForEntity failed:', e);
-      toast('Error creant document: ' + (e.message || e));
+      toast('Error: ' + (e.message || e));
       return null;
     }
   }
