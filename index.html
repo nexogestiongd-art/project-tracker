@@ -1640,6 +1640,7 @@ function getModalContent(type,id,parentId){
               </select></div>
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
+            ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection() : ''}
             `;
       })(),
       afterRender: id?()=>{
@@ -1653,9 +1654,11 @@ function getModalContent(type,id,parentId){
         const proj=ex?D.projects.find(p=>p.id===ex.projectId):D.projects.find(p=>p.id===parentId);
         const lead=document.getElementById('f-ass').value.trim()||(proj?.manager||'');
         const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,taskType:document.getElementById('f-type').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:lead,technicians:document.getElementById('f-tech').value.trim(),notes:document.getElementById('f-notes').value.trim()};
-        if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);audit(o,true);toast('Tasca actualitzada')}
-        else{D.tasks.push(audit({id:uid(),projectId:parentId,...fd},false));toast('Tasca creada ✓')}
+        let _wsDocEntity;
+        if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);audit(o,true);toast('Tasca actualitzada');_wsDocEntity=o;}
+        else{const _nt=audit({id:uid(),projectId:parentId,...fd},false);D.tasks.push(_nt);toast('Tasca creada ✓');_wsDocEntity=_nt;}
         save();closeModal();renderMain();
+        if(typeof WsDoc !== 'undefined') WsDoc.createForEntity('task',_wsDocEntity).then(()=>renderMain());
       }
     },
     subtask:{
@@ -1684,7 +1687,8 @@ function getModalContent(type,id,parentId){
               <div><label>Data límit ${inheritEnd&&!ex?.deadline?'<span style="color:var(--dim);font-size:9px">(heretada)</span>':''}</label><input type="date" id="f-dl" value="${inheritEnd}"></div>
             </div>
             <div class="fr"><label>Tècnic executor <span style="color:var(--dim);font-size:9px">(executa aquesta subtasca)</span></label><input type="text" id="f-ass" value="${E('assignee')}" placeholder="${defaultExec?`Per defecte: ${defaultExec}`:'Nom o inicials...'}"></div>
-            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>`;
+            <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
+            ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection() : ''}`;
       })(),
       afterRender: id ? ()=>{ _injectHistoryBtn('subtask', id, ex?.name||''); } : null,
       save(){
@@ -1693,9 +1697,11 @@ function getModalContent(type,id,parentId){
         const proj=parentTask?D.projects.find(p=>p.id===parentTask.projectId):null;
         const exec=document.getElementById('f-ass').value.trim()||(proj?.manager||parentTask?.assignee||'');
         const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec,notes:document.getElementById('f-notes').value.trim()};
-        if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);audit(o,true);toast('Subtasca actualitzada')}
-        else{const s=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(s);ST.xTasks.add(parentId);toast('Subtasca creada ✓')}
+        let _wsDocEntity;
+        if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);audit(o,true);toast('Subtasca actualitzada');_wsDocEntity=o;}
+        else{const _ns=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(_ns);ST.xTasks.add(parentId);toast('Subtasca creada ✓');_wsDocEntity=_ns;}
         save();closeModal();renderMain();
+        if(typeof WsDoc !== 'undefined') WsDoc.createForEntity('subtask',_wsDocEntity).then(()=>renderMain());
       }
     },
     milestone:{
@@ -5700,6 +5706,126 @@ document.addEventListener('keydown', function(e){
     showLoginGate();
   }
 }
+
+  // ═══════════════════════════════════════════════════════════
+// MODULE: workspace-docs (Sprint 1)
+// Creació de Docs/Sheets/Slides/Forms des de tasques i subtasques.
+// Quan migrem a build modular, aquest bloc va a /src/scripts/workspace-docs.js
+// ═══════════════════════════════════════════════════════════
+const WsDoc = {
+  TYPES: {
+    doc:    { label: 'Document',       icon: '🔵' },
+    sheet:  { label: 'Full de càlcul', icon: '🟢' },
+    slides: { label: 'Presentació',    icon: '🟠' },
+    form:   { label: 'Formulari',      icon: '📝' }
+  },
+
+  // Lazy folder creation for task — pattern existing helpers
+  async ensureTaskFolder(taskId) {
+    const task = D.tasks.find(t => t.id === taskId);
+    if (!task) return null;
+    if (task.driveFolderId) return task.driveFolderId;
+    if (!isConnected()) return null;
+    const parentId = await ensureProjectFolder(task.projectId);
+    try {
+      const j = await gasRun('createDriveFolder', task.name, parentId || '');
+      const f = JSON.parse(j);
+      if (f && f.id) { task.driveFolderId = f.id; save(); }
+      return f && f.id || null;
+    } catch(e) { console.error('[WsDoc] ensureTaskFolder failed:', e.message); return null; }
+  },
+
+  async ensureSubtaskFolder(subId) {
+    const sub = D.subtasks.find(s => s.id === subId);
+    if (!sub) return null;
+    if (sub.driveFolderId) return sub.driveFolderId;
+    if (!isConnected()) return null;
+    const parentId = await WsDoc.ensureTaskFolder(sub.taskId);
+    try {
+      const j = await gasRun('createDriveFolder', sub.name, parentId || '');
+      const f = JSON.parse(j);
+      if (f && f.id) { sub.driveFolderId = f.id; save(); }
+      return f && f.id || null;
+    } catch(e) { console.error('[WsDoc] ensureSubtaskFolder failed:', e.message); return null; }
+  },
+
+  async ensureEntityFolder(entityType, entityId) {
+    if (entityType === 'task')    return WsDoc.ensureTaskFolder(entityId);
+    if (entityType === 'subtask') return WsDoc.ensureSubtaskFolder(entityId);
+    return null;
+  },
+
+  // HTML injectat als modals de task/subtask (idempotent — segur de cridar)
+  renderModalSection() {
+    return `
+      <div class="fr" style="border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text);margin-bottom:8px">
+          <input type="checkbox" id="wsdoc-create" style="accent-color:var(--accent);width:15px;height:15px" onchange="WsDoc.toggleSection(this.checked)">
+          <span>📄 Crear document de Workspace en guardar</span>
+        </label>
+        <div id="wsdoc-options" style="display:none;background:var(--s0);border:1px solid var(--border);border-radius:7px;padding:12px;margin-top:6px">
+          <label style="font-size:10px;margin-bottom:4px">Tipus</label>
+          <select id="wsdoc-type">
+            <option value="doc">🔵 Document de Google</option>
+            <option value="sheet">🟢 Full de càlcul</option>
+            <option value="slides">🟠 Presentació</option>
+            <option value="form">📝 Formulari</option>
+          </select>
+          <div style="font-size:11px;color:var(--dim);line-height:1.5;margin-top:8px">
+            Es crearà al Drive amb el nom de la tasca, dins de la carpeta de la tasca, i quedarà vinculat com a adjunt.
+          </div>
+        </div>
+      </div>`;
+  },
+
+  toggleSection(checked) {
+    const opts = document.getElementById('wsdoc-options');
+    if (opts) opts.style.display = checked ? '' : 'none';
+  },
+
+  // Llegeix l'estat del modal. null = l'usuari no ha optat per crear-ne cap.
+  readModalState() {
+    const chk = document.getElementById('wsdoc-create');
+    if (!chk || !chk.checked) return null;
+    return { type: document.getElementById('wsdoc-type')?.value || 'doc' };
+  },
+
+  // Hook principal: cridat des del save() de task/subtask després de guardar
+  async createForEntity(entityType, entity) {
+    const state = WsDoc.readModalState();
+    if (!state) return null;
+    if (!isConnected()) { toast('Cal connexió al backend per crear documents'); return null; }
+    try {
+      toast('Creant ' + WsDoc.TYPES[state.type].label.toLowerCase() + '...');
+      const folderId = await WsDoc.ensureEntityFolder(entityType, entity.id);
+      if (!folderId) throw new Error('No s\'ha pogut preparar la carpeta destí');
+      const json = await gasRun('createWorkspaceDoc', state.type, entity.name, folderId);
+      const result = JSON.parse(json);
+      addAttachment({
+        entityType: entityType,
+        entityId: entity.id,
+        name: result.name,
+        source: 'drive',
+        driveFileId: result.id,
+        url: result.url,
+        mimeType: result.mimeType,
+        size: 0,
+        createdFromEntity: true,
+        wsDocType: result.type
+      });
+      toast('✓ ' + WsDoc.TYPES[state.type].label + ' creat');
+      try { window.open(result.url, '_blank', 'noopener'); } catch(e){}
+      return result;
+    } catch(e) {
+      console.error('[WsDoc] createForEntity failed:', e);
+      toast('Error creant document: ' + (e.message || e));
+      return null;
+    }
+  }
+};
+// ═══════════════════════════════════════════════════════════
+// END MODULE: workspace-docs
+// ═══════════════════════════════════════════════════════════
 
 // Script is at end of <body> so DOM is always ready — call directly
 // But use readyState check as safety net
