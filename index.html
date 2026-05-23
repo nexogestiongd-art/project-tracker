@@ -1809,9 +1809,11 @@ function delProject(id,e){
 }
 function delTask(id){
   if(!confirm('Eliminar la tasca i les seves subtasques?'))return;
+  const snapshot={tasks:D.tasks.map(t=>({...t})),subtasks:D.subtasks.map(s=>({...s}))};
+  pushUndo('Eliminar tasca',snapshot);
   D.tasks=D.tasks.filter(t=>t.id!==id);
   D.subtasks=D.subtasks.filter(s=>s.taskId!==id);
-  save();renderMain();toast('Tasca eliminada');
+  save();renderMain();toast('Tasca eliminada',true);
 }
 function delSub(id){
   if(!confirm('Eliminar la subtasca?'))return;
@@ -3766,6 +3768,136 @@ function onDragLeaveSidebarProject(e,targetProjectId){
 
 // ═══════════════════════════════════════════════════════════
 
+// ─── DRAG / DROP HANDLERS ────────────────────────────────────
+// onDragEnd, onDropTask, onDropSub, onDropSidebarProject
+// estaven referenciats als atributs HTML però no definits.
+
+function onDragEnd(){
+  document.body.classList.remove('is-dragging-task');
+  document.querySelectorAll('.dragging').forEach(function(el){el.classList.remove('dragging');});
+  document.querySelectorAll('.drag-over-top,.drag-over-bot').forEach(function(el){
+    el.classList.remove('drag-over-top','drag-over-bot');
+  });
+  document.querySelectorAll('.drop-target-hover').forEach(function(el){
+    el.classList.remove('drop-target-hover');
+  });
+  // Restaura sidebar: treu l'estil inline que s'aplicà durant el drag
+  document.querySelectorAll('.tree-client-children').forEach(function(c){c.style.display='';});
+  document.querySelectorAll('.tree-projects').forEach(function(p){p.style.display='';});
+  dragState=null;
+}
+
+function onDropTask(e,targetTaskId){
+  e.preventDefault();
+  document.querySelectorAll('.drag-over-top,.drag-over-bot').forEach(function(el){
+    el.classList.remove('drag-over-top','drag-over-bot');
+  });
+  if(!dragState||dragState.type!=='task')return;
+  const srcId=dragState.id;
+  if(srcId===targetTaskId)return;
+  const srcTask=D.tasks.find(function(t){return t.id===srcId;});
+  const tgtTask=D.tasks.find(function(t){return t.id===targetTaskId;});
+  if(!srcTask||!tgtTask)return;
+  if(srcTask.projectId!==tgtTask.projectId){
+    openCrossProjectTransfer(srcId,tgtTask.projectId);
+    return;
+  }
+  // Reordenació dins el mateix projecte
+  const tgtEl=document.querySelector('[data-task-id="'+targetTaskId+'"]');
+  const insertBefore=tgtEl?tgtEl.classList.contains('drag-over-top'):true;
+  const srcIdx=D.tasks.findIndex(function(t){return t.id===srcId;});
+  const removed=D.tasks.splice(srcIdx,1)[0];
+  const newTgt=D.tasks.findIndex(function(t){return t.id===targetTaskId;});
+  D.tasks.splice(insertBefore?newTgt:newTgt+1,0,removed);
+  save();renderMain();
+}
+
+function onDropSub(e,targetSubId,targetTaskId){
+  e.preventDefault();
+  document.querySelectorAll('.drag-over-top,.drag-over-bot').forEach(function(el){
+    el.classList.remove('drag-over-top','drag-over-bot');
+  });
+  if(!dragState||dragState.type!=='subtask')return;
+  const srcId=dragState.id;
+  if(srcId===targetSubId)return;
+  const srcSub=D.subtasks.find(function(s){return s.id===srcId;});
+  if(!srcSub)return;
+  // Si és a una altra tasca, canviem el pare
+  if(srcSub.taskId!==targetTaskId) srcSub.taskId=targetTaskId;
+  const tgtEl=document.querySelector('[data-sub-id="'+targetSubId+'"]');
+  const insertBefore=tgtEl?tgtEl.classList.contains('drag-over-top'):true;
+  const srcIdx=D.subtasks.findIndex(function(s){return s.id===srcId;});
+  const removed=D.subtasks.splice(srcIdx,1)[0];
+  const newTgt=D.subtasks.findIndex(function(s){return s.id===targetSubId;});
+  D.subtasks.splice(insertBefore?newTgt:newTgt+1,0,removed);
+  save();renderMain();
+}
+
+function onDropSidebarProject(e,targetProjectId){
+  e.preventDefault();e.stopPropagation();
+  document.querySelectorAll('.tree-project-row').forEach(function(r){r.classList.remove('drop-target-hover');});
+  if(!dragState||dragState.type!=='task')return;
+  if(dragState.fromProjectId===targetProjectId)return;
+  openCrossProjectTransfer(dragState.id,targetProjectId);
+}
+
+function openCrossProjectTransfer(taskId,targetProjectId){
+  const task=D.tasks.find(function(t){return t.id===taskId;});
+  const tgtProj=D.projects.find(function(p){return p.id===targetProjectId;});
+  if(!task||!tgtProj)return;
+  const subs=D.subtasks.filter(function(s){return s.taskId===taskId;});
+  const body=document.getElementById('m-body');
+  const title=document.getElementById('m-title');
+  if(!body||!title)return;
+  title.textContent='Moure tasca a un altre projecte';
+  body.innerHTML=
+    '<div style="padding:10px 14px;background:var(--s0);border:1px solid var(--border);border-radius:8px;margin-bottom:14px">'
+    +'<div style="font-size:11px;color:var(--dim);margin-bottom:3px">Tasca</div>'
+    +'<div style="font-size:13.5px;font-weight:600;color:var(--text)">'+esc(task.name)+'</div>'
+    +(subs.length?'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+subs.length+' subtasca'+(subs.length!==1?'s':'')+' inclosa'+(subs.length!==1?'s':'')+'</div>':'')
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px">'
+    +'<span style="color:var(--muted)">Destí:</span>'
+    +'<strong style="color:var(--text)">'+esc(tgtProj.name)+'</strong>'
+    +'</div>'
+    +'<div class="fr"><label>Mode</label>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +'<label style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:normal;text-transform:none;letter-spacing:0;cursor:pointer;padding:10px 12px;background:var(--s0);border:1px solid var(--border);border-radius:7px">'
+    +'<input type="radio" name="xfer-mode" value="move" checked style="accent-color:var(--accent)"> Moure (elimina del projecte original)</label>'
+    +'<label style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:normal;text-transform:none;letter-spacing:0;cursor:pointer;padding:10px 12px;background:var(--s0);border:1px solid var(--border);border-radius:7px">'
+    +'<input type="radio" name="xfer-mode" value="copy" style="accent-color:var(--accent)"> Copiar (es manté al projecte original)</label>'
+    +'</div></div>';
+  modalSave=function(){
+    const mode=(document.querySelector('input[name="xfer-mode"]:checked')||{}).value||'move';
+    executeCrossProjectTransfer(taskId,targetProjectId,mode);
+    closeModal();
+  };
+  document.getElementById('m-save').textContent='Confirmar';
+  document.getElementById('modal').classList.add('open');
+}
+
+function executeCrossProjectTransfer(taskId,targetProjectId,mode){
+  const task=D.tasks.find(function(t){return t.id===taskId;});
+  if(!task)return;
+  const subs=D.subtasks.filter(function(s){return s.taskId===taskId;});
+  if(mode==='move'){
+    task.projectId=targetProjectId;
+    toast('Tasca moguda a '+esc((D.projects.find(function(p){return p.id===targetProjectId;})||{}).name||''));
+  } else {
+    const newTask=Object.assign({},task,{id:uid(),projectId:targetProjectId});
+    audit(newTask,false);
+    D.tasks.push(newTask);
+    subs.forEach(function(s){
+      const ns=Object.assign({},s,{id:uid(),taskId:newTask.id});
+      audit(ns,false);
+      D.subtasks.push(ns);
+    });
+    toast('Tasca copiada ✓');
+  }
+  ST.projectId=targetProjectId;
+  save();renderAll();
+}
+
 // ─── RAG LOGIC ───────────────────────────────────────────────
 function getProjectRAG(projectId){
   const tasks=D.tasks.filter(t=>t.projectId===projectId&&t.status!=='fet');
@@ -5667,11 +5799,13 @@ function _trapFocus(e, modalEl){
 }
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape'){
-    // Close topmost open modal
     if(document.getElementById('modal-settings')?.classList.contains('open')){ closeSettings(); return; }
     if(document.getElementById('modal')?.classList.contains('open')){ closeModal(); return; }
   }
-  // Focus trap if a modal is open
+  // Ctrl+Z / Cmd+Z — desfer (quan no hi ha modal obert)
+  if((e.ctrlKey||e.metaKey) && e.key==='z' && !document.querySelector('.overlay.open')){
+    e.preventDefault(); undoLast(); return;
+  }
   const openModalEl = document.querySelector('.overlay.open .modal');
   if(openModalEl) _trapFocus(e, openModalEl);
 });
