@@ -1657,8 +1657,9 @@ function getModalContent(type,id,parentId){
         let _wsDocEntity;
         if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);audit(o,true);toast('Tasca actualitzada');_wsDocEntity=o;}
         else{const _nt=audit({id:uid(),projectId:parentId,...fd},false);D.tasks.push(_nt);toast('Tasca creada ✓');_wsDocEntity=_nt;}
+        const _wsDocState=typeof WsDoc!=='undefined'?WsDoc.readModalState():null;
         save();closeModal();renderMain();
-        if(typeof WsDoc !== 'undefined') WsDoc.createForEntity('task',_wsDocEntity).then(()=>renderMain());
+        if(_wsDocState) WsDoc.createForEntity('task',_wsDocEntity,_wsDocState).then(()=>renderMain());
       }
     },
     subtask:{
@@ -1700,8 +1701,9 @@ function getModalContent(type,id,parentId){
         let _wsDocEntity;
         if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);audit(o,true);toast('Subtasca actualitzada');_wsDocEntity=o;}
         else{const _ns=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(_ns);ST.xTasks.add(parentId);toast('Subtasca creada ✓');_wsDocEntity=_ns;}
+        const _wsDocState=typeof WsDoc!=='undefined'?WsDoc.readModalState():null;
         save();closeModal();renderMain();
-        if(typeof WsDoc !== 'undefined') WsDoc.createForEntity('subtask',_wsDocEntity).then(()=>renderMain());
+        if(_wsDocState) WsDoc.createForEntity('subtask',_wsDocEntity,_wsDocState).then(()=>renderMain());
       }
     },
     milestone:{
@@ -5791,8 +5793,7 @@ const WsDoc = {
   },
 
   // Hook principal: cridat des del save() de task/subtask després de guardar
-  async createForEntity(entityType, entity) {
-    const state = WsDoc.readModalState();
+  async createForEntity(entityType, entity, state) {
     if (!state) return null;
     if (!isConnected()) { toast('Cal connexió al backend per crear documents'); return null; }
     try {
