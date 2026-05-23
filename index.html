@@ -1640,7 +1640,7 @@ function getModalContent(type,id,parentId){
               </select></div>
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
-            ${typeof  !== 'undefined' ? WsDoc.renderModalSection() : ''}
+            ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection() : ''}
             `;
       })(),
       afterRender: id?()=>{
