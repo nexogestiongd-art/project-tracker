@@ -1028,6 +1028,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       <input type="text" id="lg-token" class="mono" placeholder="Token de 28 caracters">
     </div>
     <div class="lg-status" id="lg-status"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;font-weight:normal;text-transform:none;letter-spacing:0;margin-bottom:14px">
+      <input type="checkbox" id="lg-remember" checked style="accent-color:var(--accent)"> Recorda les credencials en aquest dispositiu
+    </label>
     <div class="lg-btn-row">
       <button class="lg-btn lg-btn-prim" id="lg-connect-btn" onclick="loginConnect()">Connectar</button>
     </div>
@@ -1047,7 +1050,10 @@ const BACKEND_KEY = 'pt_backend';
 let GAS_URL   = '';
 let GAS_TOKEN = '';
 try {
-  const cfg = JSON.parse(localStorage.getItem(BACKEND_KEY) || '{}');
+  const cfg = JSON.parse(
+    localStorage.getItem(BACKEND_KEY) ||
+    sessionStorage.getItem(BACKEND_KEY + '_s') || '{}'
+  );
   GAS_URL   = cfg.url   || '';
   GAS_TOKEN = cfg.token || '';
 } catch(e){}
@@ -1133,9 +1139,16 @@ async function backendPing(url, token) {
   return resp.json();
 }
 
-function saveBackendConfig(url, token) {
+function saveBackendConfig(url, token, remember) {
   GAS_URL = url; GAS_TOKEN = token;
-  localStorage.setItem(BACKEND_KEY, JSON.stringify({ url, token }));
+  const cfg = JSON.stringify({ url, token });
+  if(remember === false){
+    sessionStorage.setItem(BACKEND_KEY + '_s', cfg);
+    localStorage.removeItem(BACKEND_KEY);
+  } else {
+    localStorage.setItem(BACKEND_KEY, cfg);
+    sessionStorage.removeItem(BACKEND_KEY + '_s');
+  }
 }
 
 function clearBackendConfig() {
@@ -1641,11 +1654,12 @@ function getModalContent(type,id,parentId){
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
             ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection() : ''}
+            ${id ? `<div id="files-sec-task-${id}" style="margin-top:8px"></div>` : ''}
             `;
       })(),
       afterRender: id?()=>{
         const container=document.getElementById(`files-sec-task-${id}`);
-        if(container)renderFilesSection(container,'task',id,'');
+        if(container)renderFilesSection(container,'task',id,ex?.driveFolderId||'');
         // Inject history button at top of modal
         _injectHistoryBtn('task', id, ex?.name||'');
       }:null,
@@ -1800,6 +1814,7 @@ function delTask(id){
   save();renderMain();toast('Tasca eliminada');
 }
 function delSub(id){
+  if(!confirm('Eliminar la subtasca?'))return;
   D.subtasks=D.subtasks.filter(s=>s.id!==id);
   save();renderMain();toast('Subtasca eliminada');
 }
@@ -5257,7 +5272,8 @@ function openBackendSetup() {
       const result = await backendPing(url, token);
       if(result.error) throw new Error(result.error);
       if(!result.result || !result.result.user) throw new Error('Resposta inesperada del backend');
-      saveBackendConfig(url, token);
+      const remember = document.getElementById('lg-remember')?.checked !== false;
+      saveBackendConfig(url, token, remember);
       CURRENT_USER = result.result.user;
       if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
       showBkStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
@@ -5598,7 +5614,8 @@ function loginConnect(){
     .then(result => {
       if(result.error) throw new Error(result.error);
       if(!result.result || !result.result.user) throw new Error('Resposta inesperada del backend');
-      saveBackendConfig(url, token);
+      const remember = document.getElementById('lg-remember')?.checked !== false;
+      saveBackendConfig(url, token, remember);
       CURRENT_USER = result.result.user;
       if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
       lgStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
