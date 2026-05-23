@@ -1640,7 +1640,7 @@ function getModalContent(type,id,parentId){
               </select></div>
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
-            ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection() : ''}
+            ${typeof  !== 'undefined' ? WsDoc.renderModalSection() : ''}
             `;
       })(),
       afterRender: id?()=>{
@@ -5752,8 +5752,20 @@ const WsDoc = {
   },
 
   async ensureEntityFolder(entityType, entityId) {
-    if (entityType === 'task')    return WsDoc.ensureTaskFolder(entityId);
-    if (entityType === 'subtask') return WsDoc.ensureSubtaskFolder(entityId);
+    // Els docs de tasques i subtasques van a la carpeta del projecte.
+    // Cap carpeta de tasca/subtasca es crea tret que s'indiqui explícitament.
+    if (entityType === 'task') {
+      const task = D.tasks.find(t => t.id === entityId);
+      if (!task) return null;
+      return ensureProjectFolder(task.projectId);
+    }
+    if (entityType === 'subtask') {
+      const sub = D.subtasks.find(s => s.id === entityId);
+      if (!sub) return null;
+      const parentTask = D.tasks.find(t => t.id === sub.taskId);
+      if (!parentTask) return null;
+      return ensureProjectFolder(parentTask.projectId);
+    }
     return null;
   },
 
