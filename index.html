@@ -5552,6 +5552,75 @@ function quickExport(){
   toast('JSON exportat ✓');
 }
 
+
+// ─── LOGIN GATE FUNCTIONS (restored from backup) ─────────────────
+function lgStatus(type, msg){
+  const el = document.getElementById('lg-status');
+  if(!el) return;
+  el.className = 'lg-status show ' + type;
+  el.textContent = msg;
+}
+
+function showLoginGate(){
+  const el = document.getElementById('login-gate');
+  if(el){
+    el.classList.remove('hidden');
+    // Pre-fill if we have existing values
+    const urlIn = document.getElementById('lg-url');
+    const tokIn = document.getElementById('lg-token');
+    if(urlIn && GAS_URL) urlIn.value = GAS_URL;
+    if(tokIn && GAS_TOKEN) tokIn.value = GAS_TOKEN;
+    setTimeout(()=>{ (urlIn?.value ? tokIn : urlIn)?.focus(); }, 100);
+  }
+}
+
+function hideLoginGate(){
+  const el = document.getElementById('login-gate');
+  if(el) el.classList.add('hidden');
+}
+
+function loginConnect(){
+  const url = document.getElementById('lg-url')?.value.trim();
+  const token = document.getElementById('lg-token')?.value.trim();
+  if(!url || !token){ lgStatus('err', 'Omple URL i token'); return; }
+  const btn = document.getElementById('lg-connect-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Validant...'; }
+  lgStatus('loading', 'Validant credencials...');
+  backendPing(url, token)
+    .then(result => {
+      if(result.error) throw new Error(result.error);
+      if(!result.result || !result.result.user) throw new Error('Resposta inesperada del backend');
+      saveBackendConfig(url, token);
+      CURRENT_USER = result.result.user;
+      if(result.result.adminEmail) PT_CONFIG.ADMIN_EMAIL = result.result.adminEmail;
+      lgStatus('ok', '✓ Connectat com a ' + CURRENT_USER.name + ' (' + CURRENT_USER.role + ')');
+      setTimeout(()=>{
+        hideLoginGate();
+        load(); autoMigrateV1(); applyColWidths(); checkMigrationBadge();
+        renderAll();
+        setSyncState('syncing');
+        gasRun('getData').then(async function(dataJson){
+          await _mergeRemoteData(dataJson);
+          setSyncState('synced');
+          renderAll();
+          if(result.result.firstLogin) setTimeout(function(){ showFirstLoginWelcome(); }, 400);
+        }).catch(function(e){
+          setSyncState('error');
+          console.error('[loginConnect] getData error:', e);
+        });
+      }, 600);
+    })
+    .catch(err => {
+      if(btn){ btn.disabled = false; btn.textContent = 'Connectar'; }
+      let msg = err.message || String(err);
+      if(msg.includes('404')) msg = 'URL del backend no trobada (404). Comprova que la URL acabi en /exec.';
+      else if(msg.includes('401') || msg.includes('403')) msg = 'Token incorrecte o sense permisos.';
+      else if(msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'No s\'ha pogut connectar. Comprova la connexió.';
+      else if(msg.includes('Unexpected token') || msg.includes('JSON')) msg = 'La URL no correspon a un backend vàlid de Google Apps Script.';
+      lgStatus('err','✗ ' + msg);
+    });
+}
+
 function _initApp() {
   // Modal listeners
   const mSave = document.getElementById('m-save');
