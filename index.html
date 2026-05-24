@@ -771,6 +771,61 @@ body.ff-mono{font-family:'JetBrains Mono',monospace}
 .av-btn.remove:hover{background:rgba(248,113,113,.12)}
 input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 
+/* ── WORKFLOW VIEWER ───────────────────────────────────────── */
+.wf-wrap{display:flex;flex-direction:column;gap:14px}
+.wf-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.wf-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);flex:1}
+.wf-subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+.wf-maintenance-btn{padding:7px 14px;font-size:12px;border-radius:7px;background:var(--s2);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-weight:600;font-family:'Outfit',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.wf-maintenance-btn:hover{background:var(--s3);color:var(--text)}
+.wf-maintenance-btn.on{background:rgba(248,113,113,.15);color:var(--p-high);border-color:var(--p-high)}
+.wf-maintenance-banner{padding:10px 14px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:8px;color:var(--p-high);font-size:12.5px;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.wf-legend{display:flex;gap:14px;font-size:11px;color:var(--muted);flex-wrap:wrap;padding:6px 0}
+.wf-leg{display:flex;align-items:center;gap:5px}
+.wf-leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;border:1.5px solid currentColor}
+.wf-leg-dot.done{background:var(--g-done);border-color:var(--g-done)}
+.wf-leg-dot.partial{background:var(--warn);border-color:var(--warn)}
+.wf-leg-dot.todo{background:transparent;border-color:var(--dim);border-style:dashed}
+.wf-leg-dot.disabled{background:var(--p-high);border-color:var(--p-high)}
+.wf-canvas-wrap{background:var(--s0);border:1px solid var(--border);border-radius:9px;padding:18px 16px;overflow-x:auto}
+.wf-canvas{display:flex;align-items:center;gap:3px;min-width:fit-content}
+.wf-block{flex-shrink:0;width:118px;background:var(--s1);border:2px solid var(--border);border-radius:9px;padding:11px 7px 9px;cursor:pointer;transition:all .15s;text-align:center;position:relative}
+.wf-block:hover{transform:translateY(-2px);border-color:var(--border2)}
+.wf-block.selected{border-color:var(--accent);background:var(--s2);transform:translateY(-2px)}
+.wf-block.status-done{border-color:var(--g-done)}
+.wf-block.status-partial{border-color:var(--warn)}
+.wf-block.status-todo{border-style:dashed;border-color:var(--dim);opacity:.68}
+.wf-block.status-disabled{border-color:var(--p-high)!important;background:rgba(248,113,113,.05);opacity:.55}
+.wf-block.status-disabled .wf-block-name{text-decoration:line-through}
+.wf-block-icon{font-size:22px;margin-bottom:5px;line-height:1}
+.wf-block-name{font-size:11.5px;font-weight:600;color:var(--text);line-height:1.25;min-height:30px;display:flex;align-items:center;justify-content:center}
+.wf-block-badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-family:'JetBrains Mono',monospace}
+.wf-block-badge.done{background:var(--g-done);color:#000}
+.wf-block-badge.partial{background:var(--warn);color:#000}
+.wf-block-badge.todo{background:var(--s3);color:var(--muted)}
+.wf-block-badge.disabled{background:var(--p-high);color:#fff}
+.wf-arrow{font-size:13px;color:var(--dim);flex-shrink:0;padding:0 1px;font-weight:bold}
+.wf-fork{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;padding:0 3px;line-height:1.2}
+.wf-fork-line{font-weight:bold;color:var(--muted)}
+.wf-loop-note{font-size:10px;color:var(--accent);font-family:'JetBrains Mono',monospace;text-align:center;margin-top:8px;padding:5px 10px;background:rgba(167,139,250,.06);border:1px dashed rgba(167,139,250,.25);border-radius:6px}
+.wf-detail{background:var(--s0);border:1px solid var(--border);border-radius:9px;padding:16px 18px;min-height:90px}
+.wf-detail-empty{color:var(--dim);font-size:12.5px;text-align:center;padding:18px 0;font-style:italic}
+.wf-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.wf-detail-icon{font-size:24px}
+.wf-detail-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);flex:1}
+.wf-detail-status{font-size:10px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:700}
+.wf-detail-status.done{background:rgba(52,211,153,.15);color:var(--g-done)}
+.wf-detail-status.partial{background:rgba(251,191,36,.15);color:var(--warn)}
+.wf-detail-status.todo{background:var(--s3);color:var(--muted)}
+.wf-detail-status.disabled{background:rgba(248,113,113,.15);color:var(--p-high)}
+.wf-detail-desc{font-size:12.5px;color:var(--muted);line-height:1.65;margin-bottom:12px}
+.wf-detail-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)}
+.wf-banner-tech{position:sticky;top:0;z-index:50;padding:10px 16px;background:rgba(248,113,113,.12);border-bottom:2px solid var(--p-high);color:var(--p-high);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;justify-content:center}
+
+/* sidebar maintenance pill */
+.sb-maint-pill{padding:6px 10px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);border-radius:6px;font-size:10.5px;color:var(--p-high);font-weight:600;text-align:center;letter-spacing:.5px;margin:0 12px 8px}
+
+
 #toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border2);border-left:3px solid var(--accent);color:var(--text);padding:10px 16px;border-radius:7px;font-size:13px;font-weight:500;transform:translateY(10px);opacity:0;pointer-events:none;transition:all .22s ease;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 #toast.show{opacity:1;transform:translateY(0)}
 /* ══ CHECKLIST ══ */
@@ -1166,7 +1221,7 @@ const MS_STATUSES=['pendent','assolida','atrasada'];
 const MONTHS=['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'];
 
 // ─── DATA ────────────────────────────────────────────────────
-let D={clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[],sectors:[],docTemplates:[]};
+let D={clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[],sectors:[],docTemplates:[],featureFlags:null};
 let ST={projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''}};
 let modalSave=null;
 let selColor=COLORS[0];
@@ -1384,7 +1439,7 @@ async function manualSync(){
     const dataJson = await gasRun('getData');
     if(dataJson){
       const p = JSON.parse(dataJson);
-      D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[], sectors:p.sectors||[], docTemplates:p.docTemplates||[] };
+      D = { clients:p.clients||[], areas:p.areas||[], projects:p.projects||[], tasks:p.tasks||[], subtasks:p.subtasks||[], milestones:p.milestones||[], checklists:p.checklists||[], attachments:p.attachments||[], sectors:p.sectors||[], docTemplates:p.docTemplates||[], featureFlags:p.featureFlags||null };
       localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:Date.now()}));
     }
     setSyncState('synced');
@@ -1475,7 +1530,7 @@ document.addEventListener('visibilitychange', function(){
 function load(){
   try{
     const r=localStorage.getItem('pt3_d');
-    if(r){const p=JSON.parse(r);D={clients:p.clients||[],areas:p.areas||[],projects:p.projects||[],tasks:p.tasks||[],subtasks:p.subtasks||[],milestones:p.milestones||[],checklists:p.checklists||[],attachments:p.attachments||[],sectors:p.sectors||[],docTemplates:p.docTemplates||[]};}
+    if(r){const p=JSON.parse(r);D={clients:p.clients||[],areas:p.areas||[],projects:p.projects||[],tasks:p.tasks||[],subtasks:p.subtasks||[],milestones:p.milestones||[],checklists:p.checklists||[],attachments:p.attachments||[],sectors:p.sectors||[],docTemplates:p.docTemplates||[],featureFlags:p.featureFlags||null};}
   }catch(e){}
   try{
     const s=JSON.parse(localStorage.getItem('pt3_s')||'{}');
@@ -1500,7 +1555,8 @@ async function _mergeRemoteData(dataJson){
       clients:remote.clients||[], areas:remote.areas||[], projects:remote.projects||[],
       tasks:remote.tasks||[], subtasks:remote.subtasks||[], milestones:remote.milestones||[],
       checklists:remote.checklists||[], attachments:remote.attachments||[],
-      sectors:remote.sectors||[], docTemplates:remote.docTemplates||[]
+      sectors:remote.sectors||[], docTemplates:remote.docTemplates||[],
+      featureFlags:remote.featureFlags||null
     };
     localStorage.setItem('pt3_d', JSON.stringify({...D,_v:SCHEMA_VER,_savedAt:remoteTs||Date.now()}));
   } else {
@@ -1510,7 +1566,8 @@ async function _mergeRemoteData(dataJson){
       clients:localParsed.clients||[], areas:localParsed.areas||[], projects:localParsed.projects||[],
       tasks:localParsed.tasks||[], subtasks:localParsed.subtasks||[], milestones:localParsed.milestones||[],
       checklists:localParsed.checklists||[], attachments:localParsed.attachments||[],
-      sectors:localParsed.sectors||[], docTemplates:localParsed.docTemplates||[]
+      sectors:localParsed.sectors||[], docTemplates:localParsed.docTemplates||[],
+      featureFlags:localParsed.featureFlags||null
     };
     gasRun('saveData', localRaw).catch(function(e){ console.warn('[Sync] Push failed:', e); });
   }
@@ -1999,7 +2056,12 @@ function renderSidebar(){
     return;
   }
   const sortedClients=sbSortAlpha?[...D.clients].sort((a,b)=>a.name.localeCompare(b.name,'ca')):D.clients;
-  el.innerHTML=sortedClients.map(cl=>{
+  // Maintenance banner for techs
+  let _prefixHtml = '';
+  if (typeof isMaintenanceMode === 'function' && isMaintenanceMode() && !isAdmin()){
+    _prefixHtml = '<div class="sb-maint-pill" title="L\'administrador està treballant en millores. Algunes funcions poden no estar disponibles.">🔧 MANTENIMENT</div>';
+  }
+  el.innerHTML = _prefixHtml + sortedClients.map(cl=>{
     const isOpen=ST.xClients.has(cl.id);
     const aIds=D.areas.filter(a=>a.clientId===cl.id).map(a=>a.id);
     const pIds=D.projects.filter(p=>aIds.includes(p.areaId)).map(p=>p.id);
@@ -2381,6 +2443,7 @@ const SETTINGS_REGISTRY = [
   {id:'drive',   label:'Drive',        icon:'📁', group:'Connexió', adminOnly:false, render:renderDriveSettings},
   {id:'users',   label:'Usuaris',      icon:'👥', group:'Accés',    adminOnly:true,  render:renderUsersPanel},
   {id:'perms',   label:'Permisos',     icon:'🔐', group:'Accés',    adminOnly:true,  render:renderPermsPanel},
+  {id:'workflow',  label:'Workflows',    icon:'🔀', group:'Configuració', adminOnly:true,  render:renderWorkflowPanel},
   {id:'sectors',   label:'Sectors',      icon:'🏷', group:'Dades',    adminOnly:true,  render:renderSectorsPanel},
   {id:'templates', label:'Plantilles',   icon:'📋', group:'Dades',    adminOnly:true,  render:renderTemplatesPanel},
   {id:'import',  label:'Importar',     icon:'⬇',  group:'Dades',    adminOnly:true,  render:renderImportPanel},
@@ -2404,7 +2467,7 @@ function buildSettingsUI(){
     groups[e.group].push(e);
   }
   // Build nav HTML
-  const groupOrder = ['Connexió','Accés','Dades','Aparença','Sistema'];
+  const groupOrder = ['Connexió','Accés','Configuració','Dades','Aparença','Sistema'];
   let navHtml = '';
   for(const g of groupOrder){
     if(!groups[g]) continue;
@@ -2429,6 +2492,7 @@ function buildSettingsUI(){
     'perms':  '<div id="perms-content"></div>',
     'visual': '<div id="visual-content"></div>',
     'audit':  '<div id="audit-content"></div>',
+    'workflow':  '<div id="workflow-content"></div>',
     'sectors':   '<div id="sectors-content"></div>',
     'templates': '<div id="templates-content"></div>',
     'info':   '<div id="info-content"></div>',
@@ -2469,6 +2533,213 @@ function logout(){
 // ═══════════════════════════════════════════════════════════
 // IMPORT PANEL (built dynamically, was hard-coded HTML before)
 // ═══════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════
+// WORKFLOWS — definició + panell de gestió
+// ═══════════════════════════════════════════════════════════════
+
+const WORKFLOW_DEF = {
+  id: 'daily_tech',
+  name: 'Workflow diari del tècnic',
+  description: 'Procés complet d\'una jornada: login → resum → treball → validació → comunicació amb client',
+  blocks: [
+    { id:'login',       name:'Login',                icon:'🔐', impl:'done',
+      desc:'Autenticació amb URL del backend i token personal del tècnic.' },
+    { id:'summary',     name:'Resum diari',          icon:'📋', impl:'todo',
+      desc:'Pantalla inicial amb tasques d\'ahir (assolides vs proposades) i tasques d\'avui agrupades per Client → Àrea → Projecte, ordenades per data més propera i prioritat.' },
+    { id:'pick_task',   name:'Selecció tasca',       icon:'🎯', impl:'partial',
+      desc:'El tècnic tria la tasca a treballar. Actualment funciona via navegació de projectes; cal selector directe des del resum diari.' },
+    { id:'review',      name:'Revisió',              icon:'👁',  impl:'partial',
+      desc:'Llegir notes, subtasques i documentació adjunta abans de començar. Disponible al modal de la tasca.' },
+    { id:'work',        name:'Treball',              icon:'✍️', impl:'partial',
+      desc:'Obrir Doc/Sheet de Drive i treballar-hi. Creació via Sprint 1 (en blanc) i Sprint 2 (des de plantilla) operativa.' },
+    { id:'auto_log',    name:'Auto-resum canvis',    icon:'📝', impl:'todo',
+      desc:'En tancar el document, generar automàticament una nota breu amb un resum dels canvis fets.' },
+    { id:'submit',      name:'Pendent validar',      icon:'⏳', impl:'todo',
+      desc:'En marcar la tasca com a finalitzada, passa automàticament a estat "pendent de validar" i entra al sistema de ticketing.' },
+    { id:'validate',    name:'Validació director',   icon:'✅', impl:'todo',
+      desc:'El director del projecte revisa la tasca al sistema de ticketing i pot aprovar-la o retornar-la amb comentaris.' },
+    { id:'corrections', name:'Correccions',          icon:'🔄', impl:'todo',
+      desc:'Si el director retorna la tasca, el tècnic fa modificacions i la torna a enviar a validació. Bucle opcional.' },
+    { id:'send_email',  name:'Enviament correu',     icon:'📧', impl:'todo',
+      desc:'Selecció de documents a enviar. Docs Google → adjuntar PDF; Fulls de càlcul → enllaç de compartit. Obre Gmail amb adjunts i correus del client precarregats.' },
+    { id:'log_email',   name:'Registre correu',      icon:'📌', impl:'todo',
+      desc:'Constància al tracker que s\'ha enviat un correu en relació a aquesta tasca.' },
+    { id:'notify_dir',  name:'Notificació director', icon:'🔔', impl:'todo',
+      desc:'Al director li apareix que la tasca s\'ha gestionat i hi ha un correu associat.' },
+    { id:'logout',      name:'Sortida',              icon:'👋', impl:'done',
+      desc:'Tancament de sessió. Neteja credencials segons preferència "Recorda\'m".' }
+  ],
+  edges: [
+    {from:'login',      to:'summary'},
+    {from:'summary',    to:'pick_task'},
+    {from:'pick_task',  to:'review'},
+    {from:'review',     to:'work'},
+    {from:'work',       to:'auto_log'},
+    {from:'auto_log',   to:'submit'},
+    {from:'submit',     to:'validate'},
+    {from:'validate',   to:'corrections', label:'cal canvis'},
+    {from:'validate',   to:'send_email',  label:'aprovada'},
+    {from:'corrections',to:'work', back:true},
+    {from:'send_email', to:'log_email'},
+    {from:'log_email',  to:'notify_dir'},
+    {from:'notify_dir', to:'pick_task',   back:true, label:'següent tasca'},
+    {from:'notify_dir', to:'logout'}
+  ]
+};
+
+// Helpers per llegir/escriure flags
+function _getFlags(){ return (D.featureFlags || {}); }
+function isBlockEnabled(blockId){
+  const flags = _getFlags();
+  // Per defecte: actiu si impl és 'done' o 'partial', no aplica si és 'todo'
+  if (flags[blockId] === false) return false;
+  return true;
+}
+function isMaintenanceMode(){ return _getFlags()._maintenance === true; }
+function setBlockEnabled(blockId, enabled){
+  if (!D.featureFlags) D.featureFlags = {};
+  D.featureFlags[blockId] = !!enabled;
+  save();
+}
+function setMaintenanceMode(on){
+  if (!D.featureFlags) D.featureFlags = {};
+  D.featureFlags._maintenance = !!on;
+  save();
+  renderSidebar(); renderMain();
+}
+
+let _wfSelected = null;
+
+function renderWorkflowPanel(){
+  const el = document.getElementById('workflow-content');
+  if (!el) return;
+  const wf = WORKFLOW_DEF;
+  const maint = isMaintenanceMode();
+
+  // Render block by block with arrows
+  const parts = [];
+  wf.blocks.forEach(function(b, idx){
+    const userDisabled = _getFlags()[b.id] === false;
+    let status = b.impl;
+    if (userDisabled && (b.impl === 'done' || b.impl === 'partial')) status = 'disabled';
+    const sel = _wfSelected === b.id ? ' selected' : '';
+    const badgeMap = {done:'✓', partial:'~', todo:'○', disabled:'✕'};
+    parts.push(
+      '<div class="wf-block status-' + status + sel + '" onclick="wfSelectBlock(\'' + b.id + '\')">'
+      + '<div class="wf-block-icon">' + b.icon + '</div>'
+      + '<div class="wf-block-name">' + esc(b.name) + '</div>'
+      + '<div class="wf-block-badge ' + status + '">' + badgeMap[status] + '</div>'
+      + '</div>'
+    );
+    // Arrow or fork
+    if (idx < wf.blocks.length - 1) {
+      if (b.id === 'validate') {
+        parts.push('<div class="wf-fork"><div>↗ aprovada</div><div class="wf-fork-line">▶</div><div>↘ correcció</div></div>');
+      } else if (b.id === 'corrections') {
+        // corrections loops back to work — show return arrow
+        parts.push('<div class="wf-fork"><div>↩ torna a</div><div class="wf-fork-line">treball</div></div>');
+      } else if (b.id === 'notify_dir') {
+        parts.push('<div class="wf-fork"><div>↺ següent tasca</div><div class="wf-fork-line">▶</div><div>o sortir</div></div>');
+      } else {
+        parts.push('<div class="wf-arrow">▶</div>');
+      }
+    }
+  });
+
+  const detailHtml = _wfSelected
+    ? renderWfBlockDetail(wf.blocks.find(function(b){ return b.id === _wfSelected; }))
+    : '<div class="wf-detail-empty">Clica un bloc del workflow per veure el detall i les opcions.</div>';
+
+  const maintBanner = maint
+    ? '<div class="wf-maintenance-banner"><span>🔧</span><strong>Mode manteniment actiu</strong> — Els tècnics veuen un avís al sidebar i no poden tancar el workflow normalment.</div>'
+    : '';
+
+  // Stats
+  const stats = { done:0, partial:0, todo:0, disabled:0 };
+  wf.blocks.forEach(function(b){
+    const userDisabled = _getFlags()[b.id] === false;
+    if (userDisabled && (b.impl === 'done' || b.impl === 'partial')) stats.disabled++;
+    else stats[b.impl]++;
+  });
+
+  el.innerHTML =
+    '<div class="wf-wrap">'
+    + '<div class="wf-header">'
+    +   '<div style="flex:1">'
+    +     '<div class="wf-title">' + esc(wf.name) + '</div>'
+    +     '<div class="wf-subtitle">' + esc(wf.description) + '</div>'
+    +   '</div>'
+    +   '<button class="wf-maintenance-btn' + (maint ? ' on' : '') + '" onclick="wfToggleMaintenance()">'
+    +     (maint ? '🔧 Desactivar manteniment' : '🔧 Mode manteniment')
+    +   '</button>'
+    + '</div>'
+    + maintBanner
+    + '<div class="wf-legend">'
+    +   '<span class="wf-leg"><span class="wf-leg-dot done"></span>Implementat (' + stats.done + ')</span>'
+    +   '<span class="wf-leg"><span class="wf-leg-dot partial"></span>Parcial (' + stats.partial + ')</span>'
+    +   '<span class="wf-leg"><span class="wf-leg-dot todo"></span>Pendent (' + stats.todo + ')</span>'
+    +   (stats.disabled ? '<span class="wf-leg"><span class="wf-leg-dot disabled"></span>Desactivat (' + stats.disabled + ')</span>' : '')
+    + '</div>'
+    + '<div class="wf-canvas-wrap">'
+    +   '<div class="wf-canvas">' + parts.join('') + '</div>'
+    + '</div>'
+    + '<div class="wf-detail" id="wf-detail">' + detailHtml + '</div>'
+    + '</div>';
+}
+
+function renderWfBlockDetail(b){
+  if (!b) return '<div class="wf-detail-empty">Bloc no trobat.</div>';
+  const userDisabled = _getFlags()[b.id] === false;
+  let status = b.impl;
+  if (userDisabled && (b.impl === 'done' || b.impl === 'partial')) status = 'disabled';
+  const statusLabel = { done:'Implementat', partial:'Implementació parcial', todo:'Pendent d\'implementar', disabled:'Desactivat per admin' };
+  const canToggle = b.impl === 'done' || b.impl === 'partial';
+  const isOff = status === 'disabled';
+
+  let actions = '';
+  if (canToggle) {
+    if (isOff) {
+      actions = '<button class="btn btn-prim" style="font-size:12px;padding:6px 14px" onclick="wfToggleBlock(\'' + b.id + '\')">✓ Reactivar bloc</button>';
+    } else {
+      actions = '<button class="btn btn-danger" style="font-size:12px;padding:6px 14px" onclick="wfToggleBlock(\'' + b.id + '\')">✕ Desactivar bloc</button>';
+      actions += '<span style="font-size:11px;color:var(--dim);align-self:center">En desactivar, els tècnics veuran avís i la funcionalitat es bloquejarà.</span>';
+    }
+  } else {
+    actions = '<span style="font-size:11.5px;color:var(--muted);font-style:italic">Aquest bloc encara no està implementat. No es pot activar/desactivar fins que tingui codi.</span>';
+  }
+
+  return '<div class="wf-detail-head">'
+    +   '<div class="wf-detail-icon">' + b.icon + '</div>'
+    +   '<div class="wf-detail-name">' + esc(b.name) + '</div>'
+    +   '<div class="wf-detail-status ' + status + '">' + esc(statusLabel[status]) + '</div>'
+    + '</div>'
+    + '<div class="wf-detail-desc">' + esc(b.desc) + '</div>'
+    + '<div class="wf-detail-actions">' + actions + '</div>';
+}
+
+function wfSelectBlock(id){
+  _wfSelected = (_wfSelected === id) ? null : id;
+  renderWorkflowPanel();
+}
+
+function wfToggleBlock(id){
+  const current = isBlockEnabled(id);
+  setBlockEnabled(id, !current);
+  toast(current ? 'Bloc desactivat' : 'Bloc reactivat');
+  renderWorkflowPanel();
+  renderSidebar();
+}
+
+function wfToggleMaintenance(){
+  const now = isMaintenanceMode();
+  if (!now && !confirm('Activar mode manteniment? Els tècnics veuran un avís indicant que el workflow està en revisió.')) return;
+  setMaintenanceMode(!now);
+  toast(now ? 'Manteniment desactivat' : 'Manteniment ACTIVAT');
+  renderWorkflowPanel();
+}
+
 
 // ─── SECTORS PANEL ───────────────────────────────────────────
 function renderSectorsPanel(){
@@ -2723,7 +2994,7 @@ function doImport(){
         // Reload from GAS
         D={clients:parsed.clients||[],areas:parsed.areas||[],projects:parsed.projects||[],
            tasks:parsed.tasks||[],subtasks:parsed.subtasks||[],milestones:parsed.milestones||[],
-           checklists:parsed.checklists||[],attachments:parsed.attachments||[],sectors:parsed.sectors||[],docTemplates:parsed.docTemplates||[]};
+           checklists:parsed.checklists||[],attachments:parsed.attachments||[],sectors:parsed.sectors||[],docTemplates:parsed.docTemplates||[],featureFlags:parsed.featureFlags||null};
         closeSettings();renderAll();
         toast('✓ Importació completada i guardada al Drive');
       })
@@ -2734,7 +3005,7 @@ function doImport(){
   if(mode==='replace'){
     D={clients:parsed.clients||[],areas:parsed.areas||[],projects:parsed.projects||[],
        tasks:parsed.tasks||[],subtasks:parsed.subtasks||[],milestones:parsed.milestones||[],
-       checklists:parsed.checklists||[],attachments:parsed.attachments||[],sectors:parsed.sectors||[],docTemplates:parsed.docTemplates||[]};
+       checklists:parsed.checklists||[],attachments:parsed.attachments||[],sectors:parsed.sectors||[],docTemplates:parsed.docTemplates||[],featureFlags:parsed.featureFlags||null};
   } else {
     const existIds=new Set([...D.clients,...D.areas,...D.projects,...D.tasks,...D.subtasks,...D.milestones].map(x=>x.id));
     ['clients','areas','projects','tasks','subtasks','milestones','checklists'].forEach(key=>{
