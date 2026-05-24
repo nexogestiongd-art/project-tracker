@@ -1984,6 +1984,12 @@ function renderSidebar(){
   const btnTools=document.getElementById('btn-tools');
   const btnDash=document.getElementById('btn-dash');
   if(btnNew)btnNew.style.display=isAdmin()?'':'none';
+  const sbSortBtn=document.getElementById('sb-sort-btn');
+  if(sbSortBtn){
+    sbSortBtn.classList.toggle('active', sbSortAlpha);
+    sbSortBtn.setAttribute('aria-pressed', String(sbSortAlpha));
+    sbSortBtn.title = sbSortAlpha ? 'Ordenació A→Z activa' : 'Ordenar A→Z';
+  }
   if(btnTools)btnTools.style.display=isConnected()?'':'none'; // Tech sees Settings too (Visual + Logout only)
   if(btnDash)btnDash.classList.toggle('active',ST.view==='dashboard');
 
@@ -4804,14 +4810,16 @@ function resetColWidths(){
 }
 
 // ─── SIDEBAR SEARCH & SORT (#6) ──────────────────────────────
-let sbSortAlpha=false;
+let sbSortAlpha=localStorage.getItem('pt3_sb_sort')==='1';
 
 function sbToggleSort(){
   sbSortAlpha=!sbSortAlpha;
+  localStorage.setItem('pt3_sb_sort', sbSortAlpha?'1':'0');
   const btn = document.getElementById('sb-sort-btn');
   if(btn){
     btn.classList.toggle('active', sbSortAlpha);
     btn.setAttribute('aria-pressed', String(sbSortAlpha));
+    btn.title = sbSortAlpha ? 'Ordenació A→Z activa' : 'Ordenar A→Z';
   }
   sbSearch(document.getElementById('sb-q')?.value||'');
 }
