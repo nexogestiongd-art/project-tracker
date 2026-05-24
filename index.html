@@ -831,6 +831,75 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .sb-show-inactive-btn:hover{background:var(--s3);color:var(--text)}
 .sb-show-inactive-btn.on{background:rgba(167,139,250,.1);border-color:var(--accent);color:var(--accent)}
 
+
+/* ── DAILY SUMMARY ─────────────────────────────────────────── */
+.ds-wrap{padding:28px 32px;display:flex;flex-direction:column;gap:18px;max-width:980px;margin:0 auto}
+.ds-hero{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--border);border-radius:14px;padding:24px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.ds-hero-text{flex:1;min-width:200px}
+.ds-greet{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;margin-bottom:4px}
+.ds-date{font-size:13px;color:var(--muted);text-transform:capitalize}
+.ds-hero-kpis{display:flex;gap:18px;flex-wrap:wrap}
+.ds-kpi{text-align:center;padding:0 8px}
+.ds-kpi-n{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:#fff;line-height:1}
+.ds-kpi-l{font-size:10.5px;color:var(--muted);margin-top:3px;letter-spacing:.3px}
+.ds-section{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:18px 22px}
+.ds-section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ds-section-icon{font-size:17px}
+.ds-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff;flex:1}
+.ds-yest-stats{display:flex;align-items:center;gap:14px;padding:6px 0}
+.ds-yest-bar-wrap{flex:1;height:8px;background:var(--s3);border-radius:4px;overflow:hidden}
+.ds-yest-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.ds-yest-pct{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);font-weight:600;min-width:48px;text-align:right}
+.ds-yest-detail{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+.ds-yest-pending-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.ds-yest-pending-item{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:6px 10px;background:rgba(248,113,113,.05);border-left:2px solid var(--p-high);border-radius:4px;cursor:pointer}
+.ds-yest-pending-item:hover{background:rgba(248,113,113,.1)}
+.ds-yest-pending-item .ds-yp-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-yest-pending-item .ds-yp-meta{font-size:10.5px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.ds-today-empty{text-align:center;padding:32px 18px;color:var(--muted)}
+.ds-today-empty-icon{font-size:36px;margin-bottom:10px;opacity:.6}
+.ds-today-empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);margin-bottom:4px}
+.ds-today-empty-sub{font-size:12px;color:var(--dim)}
+.ds-client-group{padding:14px 0;border-top:1px solid var(--border)}
+.ds-client-group:first-child{border-top:none;padding-top:4px}
+.ds-client-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.ds-client-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ds-client-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;color:#fff;flex:1;cursor:pointer}
+.ds-client-name:hover{color:var(--accent)}
+.ds-client-pill{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--s3);padding:1px 7px;border-radius:9px}
+.ds-proj-group{margin-left:18px;margin-bottom:8px}
+.ds-proj-head{font-size:11.5px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:7px;cursor:pointer}
+.ds-proj-head:hover{color:var(--text)}
+.ds-proj-area{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.ds-task-row{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--s0);border:1px solid var(--border);border-radius:7px;margin-bottom:4px;cursor:pointer;transition:all .14s}
+.ds-task-row:hover{background:var(--s2);border-color:var(--border2);transform:translateX(2px)}
+.ds-task-row.overdue{border-left:3px solid var(--p-high)}
+.ds-task-row.today-due{border-left:3px solid var(--warn)}
+.ds-task-row.in-progress{border-left:3px solid var(--g-prog)}
+.ds-task-chk{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border2);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .14s}
+.ds-task-chk:hover{border-color:var(--g-done)}
+.ds-task-chk.on{background:var(--g-done);border-color:var(--g-done)}
+.ds-task-chk.on::after{content:'✓';font-size:10px;color:#000;font-weight:800}
+.ds-task-body{flex:1;min-width:0}
+.ds-task-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ds-task-meta{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace;flex-wrap:wrap}
+.ds-task-meta .meta-overdue{color:var(--p-high);font-weight:600}
+.ds-task-meta .meta-today{color:var(--warn);font-weight:600}
+.ds-task-meta .meta-prio-alta{color:var(--p-high)}
+.ds-task-meta .meta-prio-mitja{color:var(--p-med)}
+.ds-task-meta .meta-est{color:var(--accent)}
+.ds-task-acts{display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.ds-task-row:hover .ds-task-acts{opacity:1}
+.ds-task-acts .ta{font-size:13px;padding:3px 5px}
+.ds-subs-mini{margin-left:34px;margin-top:3px;display:flex;flex-direction:column;gap:2px}
+.ds-sub-mini{display:flex;align-items:center;gap:7px;padding:4px 10px;font-size:11.5px;color:var(--muted);cursor:pointer;border-radius:4px}
+.ds-sub-mini:hover{background:var(--s1)}
+.ds-sub-mini .ds-sm-chk{width:13px;height:13px;border-radius:3px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.ds-sub-mini .ds-sm-chk.on{background:var(--g-done);border-color:var(--g-done)}
+.ds-sub-mini .ds-sm-chk.on::after{content:'✓';font-size:7px;color:#000;font-weight:800}
+.ds-sub-mini .ds-sm-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-sub-mini.done .ds-sm-name{text-decoration:line-through;opacity:.5}
+
 /* Estimated time chip in task row */
 .est-time-chip{display:inline-block;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;background:var(--s2);padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
 .est-time-chip.inherited{opacity:.6}
@@ -1035,6 +1104,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div class="sb-foot">
     <div id="sb-user-row"></div>
     <div class="sb-foot-row" id="sb-foot-row">
+      <button class="btn-dash" id="btn-daily" onclick="openDailySummary()" title="Resum diari" aria-label="Obrir resum diari">🏠</button>
       <button class="btn-dash" id="btn-dash" onclick="openDashboard()" title="Dashboard" aria-label="Obrir dashboard">📊</button>
       <button class="btn-new-client" id="btn-new-client" onclick="openModal('client',null,null)">＋ Nou client</button>
       <button class="btn-tools" id="btn-tools" onclick="openSettings()" title="Eines" aria-label="Obrir ajustos">⚙<span class="badge" id="mig-badge"></span></button>
@@ -1235,7 +1305,7 @@ const MONTHS=['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov',
 
 // ─── DATA ────────────────────────────────────────────────────
 let D={clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[],sectors:[],docTemplates:[],featureFlags:null};
-let ST={projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''},showInactive:false};
+let ST={projectId:null,clientId:null,areaId:null,tab:'tasks',view:'daily',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''},showInactive:false};
 let modalSave=null;
 let selColor=COLORS[0];
 let pendingAvatar=null; // null=no change, ''=remove, 'data:...'=new image
@@ -1496,7 +1566,7 @@ function save(){
   const payload = JSON.stringify({...D, _v:SCHEMA_VER, _savedAt:ts});
   localStorage.setItem('pt3_d', payload);
   localStorage.setItem('pt3_s', JSON.stringify({
-    projectId: ST.projectId, tab: ST.tab,
+    projectId: ST.projectId, tab: ST.tab, view: ST.view,
     xClients: [...ST.xClients], xAreas: [...ST.xAreas],
     showInactive: ST.showInactive
   }));
@@ -1550,6 +1620,7 @@ function load(){
     const s=JSON.parse(localStorage.getItem('pt3_s')||'{}');
     ST.projectId=s.projectId||null;
     ST.tab=s.tab||'tasks';
+    if(s.view) ST.view=s.view;
     ST.xClients=new Set(s.xClients||[]);
     ST.xAreas=new Set(s.xAreas||[]);
     ST.showInactive=!!s.showInactive;
@@ -1768,7 +1839,7 @@ function getModalContent(type,id,parentId){
         const estVal=parseFloat(document.getElementById('f-est').value)||0;
         const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,taskType:document.getElementById('f-type').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:lead,technicians:document.getElementById('f-tech').value.trim(),notes:document.getElementById('f-notes').value.trim(),estimatedHours:estVal};
         let _wsDocEntity;
-        if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);audit(o,true);toast('Tasca actualitzada');_wsDocEntity=o;}
+        if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);_setCompletedAt(o);audit(o,true);toast('Tasca actualitzada');_wsDocEntity=o;}
         else{const _nt=audit({id:uid(),projectId:parentId,...fd},false);D.tasks.push(_nt);toast('Tasca creada ✓');_wsDocEntity=_nt;}
         const _wsDocState=typeof WsDoc!=='undefined'?WsDoc.readModalState():null;
         if(_wsDocState===false)return;
@@ -1818,7 +1889,7 @@ function getModalContent(type,id,parentId){
         const estVal=parseFloat(document.getElementById('f-est').value)||0;
         const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec,notes:document.getElementById('f-notes').value.trim(),estimatedHours:estVal};
         let _wsDocEntity;
-        if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);audit(o,true);toast('Subtasca actualitzada');_wsDocEntity=o;}
+        if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);_setCompletedAt(o);audit(o,true);toast('Subtasca actualitzada');_wsDocEntity=o;}
         else{const _ns=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(_ns);ST.xTasks.add(parentId);toast('Subtasca creada ✓');_wsDocEntity=_ns;}
         const _wsDocState=typeof WsDoc!=='undefined'?WsDoc.readModalState():null;
         if(_wsDocState===false)return;
@@ -1989,9 +2060,14 @@ function _updateProjectProgress(){
   if(lbl) lbl.textContent = `${pct}% · ${done}/${tasks.length} tasques`;
 }
 
+function _setCompletedAt(entity){
+  if(entity.status==='fet' && !entity.completedAt) entity.completedAt=nowISO();
+  else if(entity.status!=='fet') entity.completedAt=null;
+}
 function cycleTask(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.status = TASK_STATUSES[(TASK_STATUSES.indexOf(t.status)+1)%TASK_STATUSES.length];
+  _setCompletedAt(t);
   audit(t,true);
   save();
   if(!_updateTaskRowDOM(t)) renderMain();
@@ -1999,6 +2075,7 @@ function cycleTask(id){
 function cycleSub(id){
   const s=D.subtasks.find(x=>x.id===id);if(!s)return;
   s.status = TASK_STATUSES[(TASK_STATUSES.indexOf(s.status)+1)%TASK_STATUSES.length];
+  _setCompletedAt(s);
   audit(s,true);
   save();
   if(!_updateSubRowDOM(s)) renderMain();
@@ -2007,6 +2084,7 @@ function cycleMS(id){const m=D.milestones.find(x=>x.id===id);if(!m)return;m.stat
 function toggleTask(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.status = t.status==='fet' ? 'pendent' : 'fet';
+  _setCompletedAt(t);
   audit(t,true);
   save();
   if(!_updateTaskRowDOM(t)) renderMain();
@@ -2014,6 +2092,7 @@ function toggleTask(id){
 function toggleSub(id){
   const s=D.subtasks.find(x=>x.id===id);if(!s)return;
   s.status = s.status==='fet' ? 'pendent' : 'fet';
+  _setCompletedAt(s);
   audit(s,true);
   save();
   if(!_updateSubRowDOM(s)) renderMain();
@@ -2060,6 +2139,7 @@ function selArea(id){
 function selProject(id){ST.projectId=id;ST.clientId=null;ST.areaId=null;ST.view='project';ST.tab='tasks';ST.activeClId=null;save();renderSidebar();renderMain()}
 function selClient(id){ST.clientId=id;ST.projectId=null;ST.areaId=null;ST.view='client';ST.xClients.add(id);save();renderSidebar();renderMain()}
 function openDashboard(){ST.view='dashboard';ST.projectId=null;ST.clientId=null;ST.areaId=null;save();renderSidebar();renderMain();}
+function openDailySummary(){ST.view='daily';ST.projectId=null;ST.clientId=null;ST.areaId=null;save();renderSidebar();renderMain();}
 
 // ─── RENDER SIDEBAR ──────────────────────────────────────────
 function renderSidebar(){
@@ -2086,6 +2166,8 @@ function renderSidebar(){
   }
   if(btnTools)btnTools.style.display=isConnected()?'':'none'; // Tech sees Settings too (Visual + Logout only)
   if(btnDash)btnDash.classList.toggle('active',ST.view==='dashboard');
+  const btnDaily=document.getElementById('btn-daily');
+  if(btnDaily)btnDaily.classList.toggle('active',ST.view==='daily');
 
   const el=document.getElementById('tree');
   if(!D.clients.length){
@@ -2179,7 +2261,17 @@ function renderMain(){
   // Update dashboard button state
   const btnDash=document.getElementById('btn-dash');
   if(btnDash)btnDash.classList.toggle('active',ST.view==='dashboard');
+  const btnDaily=document.getElementById('btn-daily');
+  if(btnDaily)btnDaily.classList.toggle('active',ST.view==='daily');
 
+  // DAILY SUMMARY MODE
+  if(ST.view==='daily'){
+    tabs.style.display='none';
+    topbar.innerHTML='';
+    content.style.padding='';content.style.overflow='';
+    renderDailySummary();
+    return;
+  }
   // DASHBOARD MODE
   if(ST.view==='dashboard'){
     tabs.style.display='none';
@@ -2588,6 +2680,236 @@ function logout(){
 // ═══════════════════════════════════════════════════════════
 
 
+
+// ═══════════════════════════════════════════════════════════════
+// DAILY SUMMARY — vista per defecte post-login
+// ═══════════════════════════════════════════════════════════════
+function renderDailySummary(){
+  const content = document.getElementById('content');
+  const me = meName();
+  const isAdminUser = isAdmin();
+  const tod = today();
+  const ydDate = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+
+  // 1. Active filter — exclude inactive client/area/project chains
+  const activeProjectIds = new Set();
+  D.projects.forEach(p => {
+    if (p.active === false) return;
+    const area = D.areas.find(a => a.id === p.areaId);
+    if (!area || area.active === false) return;
+    const client = D.clients.find(c => c.id === area.clientId);
+    if (!client || client.active === false) return;
+    activeProjectIds.add(p.id);
+  });
+
+  // 2. User filter
+  const isMine = (entity) => {
+    if (isAdminUser) return true;
+    if (entity.assignee === me) return true;
+    const techs = (entity.technicians || '').split(',').map(s => s.trim()).filter(Boolean);
+    return techs.includes(me);
+  };
+
+  const visibleTasks = D.tasks.filter(t => activeProjectIds.has(t.projectId) && isMine(t));
+
+  // 3. Yesterday metrics — tasks proposed for yesterday (deadline = ahir)
+  const yProposed = visibleTasks.filter(t => t.deadline === ydDate);
+  const yDone = yProposed.filter(t => t.status === 'fet' && t.completedAt && t.completedAt.slice(0,10) === ydDate).length;
+  const yDoneToday = yProposed.filter(t => t.status === 'fet').length; // anything marked done now
+  const yTotal = yProposed.length;
+  const yPct = yTotal ? Math.round(yDoneToday / yTotal * 100) : 0;
+  const yPending = yProposed.filter(t => t.status !== 'fet');
+
+  // 4. Today tasks
+  const todayTasks = visibleTasks.filter(t => {
+    if (t.status === 'fet') return false;
+    if (t.deadline === tod) return true;
+    if (t.deadline && t.deadline < tod) return true; // overdue
+    if (t.status === 'en-curs') return true;
+    return false;
+  });
+
+  // 5. Group by client → project
+  const grouped = {};
+  todayTasks.forEach(t => {
+    const proj = D.projects.find(p => p.id === t.projectId);
+    if (!proj) return;
+    const area = D.areas.find(a => a.id === proj.areaId);
+    const cl = D.clients.find(c => c.id === area?.clientId);
+    if (!cl || !area) return;
+    if (!grouped[cl.id]) grouped[cl.id] = { client: cl, projects: {} };
+    if (!grouped[cl.id].projects[proj.id]) grouped[cl.id].projects[proj.id] = { project: proj, area: area, tasks: [] };
+    grouped[cl.id].projects[proj.id].tasks.push(t);
+  });
+
+  const pO = { alta: 0, mitja: 1, baixa: 2 };
+  Object.values(grouped).forEach(c => {
+    Object.values(c.projects).forEach(p => {
+      p.tasks.sort((a, b) => {
+        const dA = a.deadline || '9999-99-99';
+        const dB = b.deadline || '9999-99-99';
+        if (dA !== dB) return dA.localeCompare(dB);
+        return (pO[a.priority] || 1) - (pO[b.priority] || 1);
+      });
+    });
+  });
+
+  // 6. Aggregate stats
+  const totalEstHours = todayTasks.reduce((s, t) => {
+    const own = parseFloat(t.estimatedHours) || 0;
+    const subs = D.subtasks.filter(x => x.taskId === t.id && x.status !== 'fet');
+    const subEst = subs.reduce((ss, x) => ss + (parseFloat(x.estimatedHours) || 0), 0);
+    return s + own + subEst;
+  }, 0);
+  const overdueCount = todayTasks.filter(t => t.deadline && t.deadline < tod).length;
+
+  // 7. Greeting
+  const now = new Date();
+  const h = now.getHours();
+  const greet = h < 12 ? 'Bon dia' : h < 19 ? 'Bona tarda' : 'Bon vespre';
+  const userName = (CURRENT_USER && (CURRENT_USER.name || CURRENT_USER.email)) || 'tècnic';
+  const firstName = String(userName).split(/[\s@]/)[0];
+  const dateStr = now.toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // 8. Build HTML
+  // Hero
+  let html = '<div class="ds-wrap">';
+  html += '<div class="ds-hero">';
+  html +=   '<div class="ds-hero-text">';
+  html +=     '<div class="ds-greet">' + greet + ', ' + esc(firstName) + ' 👋</div>';
+  html +=     '<div class="ds-date">' + esc(dateStr) + '</div>';
+  html +=   '</div>';
+  html +=   '<div class="ds-hero-kpis">';
+  html +=     '<div class="ds-kpi"><div class="ds-kpi-n">' + todayTasks.length + '</div><div class="ds-kpi-l">PER AVUI</div></div>';
+  if (overdueCount > 0) {
+    html +=   '<div class="ds-kpi"><div class="ds-kpi-n" style="color:var(--p-high)">' + overdueCount + '</div><div class="ds-kpi-l">FORA TERMINI</div></div>';
+  }
+  if (totalEstHours > 0) {
+    html +=   '<div class="ds-kpi"><div class="ds-kpi-n">' + totalEstHours.toFixed(1) + 'h</div><div class="ds-kpi-l">ESTIMADES</div></div>';
+  }
+  html +=   '</div>';
+  html += '</div>';
+
+  // Yesterday section
+  if (yTotal > 0) {
+    const fillCol = yPct >= 80 ? 'var(--g-done)' : yPct >= 50 ? 'var(--warn)' : 'var(--p-high)';
+    html += '<div class="ds-section">';
+    html +=   '<div class="ds-section-head">';
+    html +=     '<span class="ds-section-icon">📅</span>';
+    html +=     '<div class="ds-section-title">Ahir</div>';
+    html +=   '</div>';
+    html +=   '<div class="ds-yest-stats">';
+    html +=     '<div class="ds-yest-bar-wrap"><div class="ds-yest-bar-fill" style="width:' + yPct + '%;background:' + fillCol + '"></div></div>';
+    html +=     '<div class="ds-yest-pct">' + yDoneToday + ' / ' + yTotal + '</div>';
+    html +=   '</div>';
+    html +=   '<div class="ds-yest-detail">' + yPct + '% completades · ' + (yPending.length ? yPending.length + ' arrosseguen pendents' : 'totes tancades 🎉') + '</div>';
+    if (yPending.length) {
+      html += '<div class="ds-yest-pending-list">';
+      yPending.slice(0, 5).forEach(t => {
+        const proj = D.projects.find(p => p.id === t.projectId);
+        const area = D.areas.find(a => a.id === proj?.areaId);
+        const cl = D.clients.find(c => c.id === area?.clientId);
+        html += '<div class="ds-yest-pending-item" onclick="selProject(\'' + t.projectId + '\');setTimeout(()=>openModal(\'task\',\'' + t.id + '\',null),200)">';
+        html +=   '<span class="ds-yp-name">⚠ ' + esc(t.name) + '</span>';
+        html +=   '<span class="ds-yp-meta">' + esc(cl?.name || '') + ' · ' + esc(proj?.name || '') + '</span>';
+        html += '</div>';
+      });
+      if (yPending.length > 5) html += '<div style="font-size:11px;color:var(--dim);padding:4px 10px">+ ' + (yPending.length - 5) + ' més</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Today section
+  html += '<div class="ds-section">';
+  html +=   '<div class="ds-section-head">';
+  html +=     '<span class="ds-section-icon">🎯</span>';
+  html +=     '<div class="ds-section-title">Per a avui</div>';
+  html +=   '</div>';
+
+  if (todayTasks.length === 0) {
+    html += '<div class="ds-today-empty">';
+    html +=   '<div class="ds-today-empty-icon">🎉</div>';
+    html +=   '<div class="ds-today-empty-title">Cap tasca pendent</div>';
+    html +=   '<div class="ds-today-empty-sub">No tens tasques assignades per a avui. Bon dia!</div>';
+    html += '</div>';
+  } else {
+    // Iterate clients
+    Object.values(grouped).forEach(c => {
+      html += '<div class="ds-client-group">';
+      html +=   '<div class="ds-client-head">';
+      html +=     '<div class="ds-client-dot" style="background:' + (c.client.color || 'var(--accent)') + '"></div>';
+      html +=     '<div class="ds-client-name" onclick="selClient(\'' + c.client.id + '\')">' + esc(c.client.name) + '</div>';
+      const projCount = Object.keys(c.projects).length;
+      const taskCount = Object.values(c.projects).reduce((s, p) => s + p.tasks.length, 0);
+      html +=     '<span class="ds-client-pill">' + taskCount + ' tasca' + (taskCount !== 1 ? 's' : '') + ' / ' + projCount + ' projecte' + (projCount !== 1 ? 's' : '') + '</span>';
+      html +=   '</div>';
+      // Projects
+      Object.values(c.projects).forEach(p => {
+        html += '<div class="ds-proj-group">';
+        html +=   '<div class="ds-proj-head" onclick="selProject(\'' + p.project.id + '\')">';
+        html +=     '<span class="ds-proj-area">' + esc(p.area.name) + ' › </span>';
+        html +=     '<span>' + esc(p.project.name) + '</span>';
+        if (p.project.manager) html += '<span class="ds-proj-area">PM ' + esc(p.project.manager) + '</span>';
+        html +=   '</div>';
+        p.tasks.forEach(t => {
+          const isOver = t.deadline && t.deadline < tod;
+          const isToday = t.deadline === tod;
+          const isProg = t.status === 'en-curs';
+          let rowCls = 'ds-task-row';
+          if (isOver) rowCls += ' overdue';
+          else if (isToday) rowCls += ' today-due';
+          else if (isProg) rowCls += ' in-progress';
+          const dayDiff = t.deadline ? Math.round((new Date(t.deadline) - new Date(tod)) / 86400000) : null;
+          let deadlineLabel = '';
+          if (t.deadline) {
+            if (dayDiff < 0) deadlineLabel = '<span class="meta-overdue">⚠ ' + Math.abs(dayDiff) + 'd retard</span>';
+            else if (dayDiff === 0) deadlineLabel = '<span class="meta-today">avui</span>';
+            else deadlineLabel = '<span>d\'aquí ' + dayDiff + 'd</span>';
+          } else {
+            deadlineLabel = '<span style="color:var(--dim)">sense data</span>';
+          }
+          const subs = D.subtasks.filter(s => s.taskId === t.id);
+          const subsDone = subs.filter(s => s.status === 'fet').length;
+          html += '<div class="' + rowCls + '" onclick="selProject(\'' + p.project.id + '\');setTimeout(()=>openModal(\'task\',\'' + t.id + '\',null),200)">';
+          html +=   '<div class="ds-task-chk' + (t.status === 'fet' ? ' on' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + t.id + '\')"></div>';
+          html +=   '<div class="ds-task-body">';
+          html +=     '<div class="ds-task-name">' + esc(t.name) + '</div>';
+          html +=     '<div class="ds-task-meta">';
+          html +=       deadlineLabel;
+          html +=       '<span class="meta-prio-' + t.priority + '">▲ ' + t.priority + '</span>';
+          if (subs.length) html += '<span>' + subsDone + '/' + subs.length + ' subt.</span>';
+          if (t.estimatedHours) html += '<span class="meta-est">⏱ ' + t.estimatedHours + 'h</span>';
+          if (isProg) html += '<span class="meta-today">▸ en curs</span>';
+          html +=     '</div>';
+          html +=   '</div>';
+          html += '</div>';
+          // Render subtasks pending under task
+          const pendingSubs = subs.filter(s => s.status !== 'fet');
+          if (pendingSubs.length && pendingSubs.length <= 4) {
+            html += '<div class="ds-subs-mini">';
+            pendingSubs.forEach(s => {
+              html += '<div class="ds-sub-mini' + (s.status === 'fet' ? ' done' : '') + '" onclick="selProject(\'' + p.project.id + '\');setTimeout(()=>openModal(\'subtask\',\'' + s.id + '\',null),200)">';
+              html +=   '<div class="ds-sm-chk' + (s.status === 'fet' ? ' on' : '') + '" onclick="event.stopPropagation();toggleSub(\'' + s.id + '\')"></div>';
+              html +=   '<div class="ds-sm-name">↳ ' + esc(s.name) + '</div>';
+              if (s.estimatedHours) html += '<span style="font-size:10px;color:var(--accent);font-family:\'JetBrains Mono\',monospace">⏱ ' + s.estimatedHours + 'h</span>';
+              html += '</div>';
+            });
+            html += '</div>';
+          }
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+  }
+
+  html += '</div>'; // ds-section today
+  html += '</div>'; // ds-wrap
+
+  content.innerHTML = html;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // WORKFLOWS — definició + panell de gestió
 // ═══════════════════════════════════════════════════════════════
@@ -2599,9 +2921,9 @@ const WORKFLOW_DEF = {
   blocks: [
     { id:'login',       name:'Login',                icon:'🔐', impl:'done',
       desc:'Autenticació amb URL del backend i token personal del tècnic.' },
-    { id:'summary',     name:'Resum diari',          icon:'📋', impl:'todo',
+    { id:'summary',     name:'Resum diari',          icon:'📋', impl:'done',
       desc:'Pantalla inicial amb tasques d\'ahir (assolides vs proposades) i tasques d\'avui agrupades per Client → Àrea → Projecte, ordenades per data més propera i prioritat.' },
-    { id:'pick_task',   name:'Selecció tasca',       icon:'🎯', impl:'partial',
+    { id:'pick_task',   name:'Selecció tasca',       icon:'🎯', impl:'done',
       desc:'El tècnic tria la tasca a treballar. Actualment funciona via navegació de projectes; cal selector directe des del resum diari.' },
     { id:'review',      name:'Revisió',              icon:'👁',  impl:'partial',
       desc:'Llegir notes, subtasques i documentació adjunta abans de començar. Disponible al modal de la tasca.' },
