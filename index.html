@@ -2615,6 +2615,9 @@ let _wfSelected = null;
 function renderWorkflowPanel(){
   const el = document.getElementById('workflow-content');
   if (!el) return;
+  // Preserva la posició del scroll horitzontal
+  const _oldWrap = el.querySelector('.wf-canvas-wrap');
+  const _scrollLeft = _oldWrap ? _oldWrap.scrollLeft : 0;
   const wf = WORKFLOW_DEF;
   const maint = isMaintenanceMode();
 
@@ -2687,6 +2690,9 @@ function renderWorkflowPanel(){
     + '</div>'
     + '<div class="wf-detail" id="wf-detail">' + detailHtml + '</div>'
     + '</div>';
+  // Restaura el scroll horitzontal
+  const _newWrap = el.querySelector('.wf-canvas-wrap');
+  if (_newWrap) _newWrap.scrollLeft = _scrollLeft;
 }
 
 function renderWfBlockDetail(b){
