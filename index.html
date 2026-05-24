@@ -832,6 +832,33 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .sb-show-inactive-btn.on{background:rgba(167,139,250,.1);border-color:var(--accent);color:var(--accent)}
 
 
+
+/* ── VERSIONS ────────────────────────────────────────────── */
+.vs-section{background:var(--s0);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:12px}
+.vs-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.vs-icon{font-size:14px}
+.vs-title{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);flex:1}
+.vs-count{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.vs-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s1);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;transition:all .14s}
+.vs-row:hover{border-color:var(--border2)}
+.vs-row.vs-valid{border-color:var(--g-done);background:rgba(52,211,153,.05)}
+.vs-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);background:var(--s3);padding:2px 7px;border-radius:4px;font-weight:600;min-width:50px;text-align:center}
+.vs-name{flex:1;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vs-name a{color:var(--text);text-decoration:none}
+.vs-name a:hover{color:var(--accent);text-decoration:underline}
+.vs-modified{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.vs-modified.recent{color:var(--warn)}
+.vs-modified.fresh{color:var(--g-done)}
+.vs-valid-badge{font-size:9.5px;padding:2px 7px;border-radius:4px;background:var(--g-done);color:#000;font-weight:700;letter-spacing:.5px}
+.vs-promote-btn{font-size:10px;padding:3px 9px;border-radius:4px;background:var(--s2);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-family:'Outfit',sans-serif;transition:all .14s}
+.vs-promote-btn:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.vs-new-btn{margin-top:8px;width:100%;padding:8px;font-size:12px;background:var(--s2);border:1px dashed var(--border2);color:var(--muted);border-radius:6px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;transition:all .14s}
+.vs-new-btn:hover{background:var(--s3);color:var(--text);border-style:solid;border-color:var(--accent)}
+.vs-del-btn{font-size:11px;padding:3px 6px;border-radius:4px;background:transparent;border:none;color:var(--dim);cursor:pointer}
+.vs-del-btn:hover{color:var(--p-high)}
+.att-modified-chip{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-left:6px}
+.att-modified-chip.recent{color:var(--warn);font-weight:600}
+
 /* ── DAILY SUMMARY ─────────────────────────────────────────── */
 .ds-wrap{padding:28px 32px;display:flex;flex-direction:column;gap:18px;max-width:980px;margin:0 auto}
 .ds-hero{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--border);border-radius:14px;padding:24px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
@@ -1829,6 +1856,7 @@ function getModalContent(type,id,parentId){
       afterRender: id?()=>{
         const container=document.getElementById(`files-sec-task-${id}`);
         if(container)renderFilesSection(container,'task',id,ex?.driveFolderId||'');
+        if(typeof refreshAttachmentsMetadata==='function') refreshAttachmentsMetadata('task',id);
         // Inject history button at top of modal
         _injectHistoryBtn('task', id, ex?.name||'');
       }:null,
@@ -1878,9 +1906,15 @@ function getModalContent(type,id,parentId){
               <div></div>
             </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
-            ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection(ex ? D.tasks.find(t=>t.id===ex.taskId)?.projectId : D.tasks.find(t=>t.id===parentId)?.projectId) : ''}`;
+            ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection(ex ? D.tasks.find(t=>t.id===ex.taskId)?.projectId : D.tasks.find(t=>t.id===parentId)?.projectId) : ''}
+            ${id ? `<div id="files-sec-sub-${id}" style="margin-top:8px"></div>` : ''}`;
       })(),
-      afterRender: id ? ()=>{ _injectHistoryBtn('subtask', id, ex?.name||''); } : null,
+      afterRender: id ? ()=>{
+        _injectHistoryBtn('subtask', id, ex?.name||'');
+        const container = document.getElementById('files-sec-sub-'+id);
+        if(container) renderFilesSection(container,'subtask',id,ex?.driveFolderId||'');
+        if(typeof refreshAttachmentsMetadata==='function') refreshAttachmentsMetadata('subtask',id);
+      } : null,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const parentTask=ex?D.tasks.find(t=>t.id===ex.taskId):D.tasks.find(t=>t.id===parentId);
@@ -2927,9 +2961,9 @@ const WORKFLOW_DEF = {
       desc:'El tècnic tria la tasca a treballar. Actualment funciona via navegació de projectes; cal selector directe des del resum diari.' },
     { id:'review',      name:'Revisió',              icon:'👁',  impl:'partial',
       desc:'Llegir notes, subtasques i documentació adjunta abans de començar. Disponible al modal de la tasca.' },
-    { id:'work',        name:'Treball',              icon:'✍️', impl:'partial',
+    { id:'work',        name:'Treball',              icon:'✍️', impl:'done',
       desc:'Obrir Doc/Sheet de Drive i treballar-hi. Creació via Sprint 1 (en blanc) i Sprint 2 (des de plantilla) operativa.' },
-    { id:'auto_log',    name:'Auto-resum canvis',    icon:'📝', impl:'todo',
+    { id:'auto_log',    name:'Auto-resum canvis',    icon:'📝', impl:'partial',
       desc:'En tancar el document, generar automàticament una nota breu amb un resum dels canvis fets.' },
     { id:'submit',      name:'Pendent validar',      icon:'⏳', impl:'todo',
       desc:'En marcar la tasca com a finalitzada, passa automàticament a estat "pendent de validar" i entra al sistema de ticketing.' },
@@ -5893,6 +5927,161 @@ async function ensureProjectFolder(projectId){
 }
 
 // ── FILE SECTION UI ──────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════════
+// VERSIONS — Sprint 5
+// ═══════════════════════════════════════════════════════════════
+function _getVersions(entityType, entityId){
+  return (D.attachments||[]).filter(function(a){
+    return a.entityType===entityType && a.entityId===entityId && a.versionLabel;
+  }).sort(function(a,b){
+    return (a.versionLabel||'').localeCompare(b.versionLabel||'', undefined, {numeric:true});
+  });
+}
+function _getValidVersion(entityType, entityId){
+  return (D.attachments||[]).find(function(a){
+    return a.entityType===entityType && a.entityId===entityId && a.isValidVersion;
+  });
+}
+function _nextVersionLabel(versions){
+  if(!versions || !versions.length) return 'rev.0';
+  var maxN = -1;
+  versions.forEach(function(v){
+    var m = String(v.versionLabel||'').match(/(\d+)/);
+    if(m){
+      var n = parseInt(m[1],10);
+      if(n>maxN) maxN = n;
+    }
+  });
+  return 'rev.' + (maxN+1);
+}
+function promoteToValidVersion(attachmentId){
+  var att = (D.attachments||[]).find(function(a){return a.id===attachmentId;});
+  if(!att) return;
+  (D.attachments||[]).forEach(function(a){
+    if(a.entityType===att.entityType && a.entityId===att.entityId){
+      a.isValidVersion = false;
+    }
+  });
+  att.isValidVersion = true;
+  save();
+  toast('✓ ' + (att.versionLabel||'') + ' marcada com a vàlida');
+  // Re-render the modal's files section
+  refreshModalFilesSection(att.entityType, att.entityId);
+}
+function refreshModalFilesSection(entityType, entityId){
+  var sel = entityType==='task' ? '#files-sec-task-'+entityId : '#files-sec-sub-'+entityId;
+  var container = document.querySelector(sel);
+  if(container){
+    var entity = entityType==='task' ? D.tasks.find(function(t){return t.id===entityId;}) : D.subtasks.find(function(s){return s.id===entityId;});
+    renderFilesSection(container, entityType, entityId, entity ? entity.driveFolderId||'' : '');
+  }
+}
+async function createNewVersion(entityType, entityId){
+  var valid = _getValidVersion(entityType, entityId);
+  if(!valid){ toast('Cal marcar una versió vàlida primer'); return; }
+  if(!valid.driveFileId){ toast('La versió vàlida no és un fitxer de Drive'); return; }
+  if(!isConnected()){ toast('Cal connexió al backend'); return; }
+  var entity = entityType==='task' ? D.tasks.find(function(t){return t.id===entityId;}) : D.subtasks.find(function(s){return s.id===entityId;});
+  if(!entity){ toast('Entitat no trobada'); return; }
+  var versions = _getVersions(entityType, entityId);
+  var nextLabel = _nextVersionLabel(versions);
+  try{
+    toast('Creant ' + nextLabel + '...');
+    var folderId = await WsDoc.ensureEntityFolder(entityType, entityId);
+    if(!folderId) throw new Error('No s\'ha pogut obtenir la carpeta destí');
+    var newName = entity.name + ' (' + nextLabel + ')';
+    var json = await gasRun('copyDriveFile', valid.driveFileId, newName, folderId);
+    var result = JSON.parse(json);
+    // Clear other valid flags first
+    (D.attachments||[]).forEach(function(a){
+      if(a.entityType===entityType && a.entityId===entityId) a.isValidVersion=false;
+    });
+    // Add the new version as valid
+    addAttachment({
+      entityType: entityType,
+      entityId: entityId,
+      name: result.name,
+      source: 'drive',
+      driveFileId: result.id,
+      url: result.url,
+      mimeType: result.mimeType,
+      size: 0,
+      createdFromEntity: true,
+      wsDocType: valid.wsDocType,
+      versionLabel: nextLabel,
+      isValidVersion: true,
+      lastDriveModified: new Date().toISOString()
+    });
+    toast('✓ ' + nextLabel + ' creada');
+    try{ window.open(result.url, '_blank', 'noopener'); }catch(e){}
+    refreshModalFilesSection(entityType, entityId);
+  }catch(e){
+    console.error('createNewVersion error:', e);
+    toast('Error: ' + (e.message||e));
+  }
+}
+function markAttachmentAsVersion(attachmentId){
+  var att = (D.attachments||[]).find(function(a){return a.id===attachmentId;});
+  if(!att) return;
+  var label = prompt('Etiqueta de versió (p.ex. rev.0, rev.1):', _nextVersionLabel(_getVersions(att.entityType, att.entityId)));
+  if(!label) return;
+  att.versionLabel = label.trim();
+  if(!_getValidVersion(att.entityType, att.entityId)){
+    att.isValidVersion = true;
+  }
+  save();
+  toast('Versionat com a ' + att.versionLabel);
+  refreshModalFilesSection(att.entityType, att.entityId);
+}
+
+// Auto-refresh metadades del Drive en obrir el modal
+async function refreshAttachmentsMetadata(entityType, entityId){
+  if(!isConnected()) return;
+  var atts = (D.attachments||[]).filter(function(a){
+    return a.entityType===entityType && a.entityId===entityId && a.source==='drive' && a.driveFileId;
+  });
+  if(!atts.length) return;
+  var fileIds = atts.map(function(a){return a.driveFileId;});
+  try{
+    var json = await gasRun('getFilesMetadata', fileIds);
+    var metas = JSON.parse(json);
+    if(!Array.isArray(metas)) return;
+    var changed = false;
+    metas.forEach(function(m){
+      if(!m || m.error) return;
+      var att = atts.find(function(a){return a.driveFileId===m.id;});
+      if(att && m.modifiedAt){
+        if(att.lastDriveModified !== m.modifiedAt){
+          att.lastDriveModified = m.modifiedAt;
+          changed = true;
+        }
+      }
+    });
+    if(changed){
+      save();
+      refreshModalFilesSection(entityType, entityId);
+    }
+  }catch(e){
+    console.warn('refreshAttachmentsMetadata error:', e);
+  }
+}
+
+function _timeAgo(iso){
+  if(!iso) return '';
+  var d = new Date(iso);
+  var diff = Date.now() - d.getTime();
+  var m = Math.floor(diff/60000);
+  if(m < 1) return 'ara mateix';
+  if(m < 60) return 'fa ' + m + 'm';
+  var h = Math.floor(m/60);
+  if(h < 24) return 'fa ' + h + 'h';
+  var dd = Math.floor(h/24);
+  if(dd < 30) return 'fa ' + dd + 'd';
+  return d.toLocaleDateString('ca-ES',{day:'2-digit',month:'short'});
+}
+
+
 function renderFilesSection(container,entityType,entityId,folderId){
   const atts=getAttachments(entityType,entityId);
   const isConnected=IS_GAS||driveConnected();
@@ -5900,16 +6089,48 @@ function renderFilesSection(container,entityType,entityId,folderId){
   const driveAtts=atts.filter(a=>a.source==='drive');
   const urlAtts=atts.filter(a=>a.source==='url');
 
-  const fileCardsHtml=atts.map(a=>`
+  // Versions section
+  const versions = _getVersions(entityType, entityId);
+  let versionsHtml = '';
+  if(versions.length){
+    versionsHtml = '<div class="vs-section">'
+      + '<div class="vs-head"><span class="vs-icon">🔢</span><span class="vs-title">Versions</span><span class="vs-count">'+versions.length+' versió'+(versions.length!==1?'ns':'')+'</span></div>';
+    versions.forEach(function(v){
+      const modText = v.lastDriveModified ? _timeAgo(v.lastDriveModified) : '';
+      const modCls = v.lastDriveModified && (Date.now()-new Date(v.lastDriveModified).getTime() < 3600000) ? 'recent' : '';
+      versionsHtml += '<div class="vs-row'+(v.isValidVersion?' vs-valid':'')+'">'
+        + '<span class="vs-label">'+esc(v.versionLabel)+'</span>'
+        + '<span class="vs-name"><a href="'+esc(v.url||'#')+'" target="_blank" rel="noopener">'+esc(v.name)+'</a></span>'
+        + (modText?'<span class="vs-modified '+modCls+'" title="Última modificació al Drive">'+modText+'</span>':'')
+        + (v.isValidVersion
+            ? '<span class="vs-valid-badge">✓ VÀLIDA</span>'
+            : '<button class="vs-promote-btn" onclick="promoteToValidVersion(\''+v.id+'\')">Marcar vàlida</button>')
+        + '<button class="vs-del-btn" onclick="delFileAtt(\''+v.id+'\',\''+entityType+'\',\''+entityId+'\',\''+(folderId||'')+'\')" title="Eliminar versió">✕</button>'
+        + '</div>';
+    });
+    if(_getValidVersion(entityType, entityId)){
+      versionsHtml += '<button class="vs-new-btn" onclick="createNewVersion(\''+entityType+'\',\''+entityId+'\')">+ Nova versió (copia la vàlida)</button>';
+    }
+    versionsHtml += '</div>';
+  }
+
+  // Attachments without version label (regular files)
+  const regularAtts = atts.filter(function(a){return !a.versionLabel;});
+  const fileCardsHtml=regularAtts.map(a=>{
+    const modChip = a.lastDriveModified ? '<span class="att-modified-chip'+(Date.now()-new Date(a.lastDriveModified).getTime()<3600000?' recent':'')+'">📝 '+_timeAgo(a.lastDriveModified)+'</span>' : '';
+    const versionBtn = a.source==='drive' && a.driveFileId ? '<button class="vs-promote-btn" style="margin-right:4px" onclick="event.preventDefault();event.stopPropagation();markAttachmentAsVersion(\''+a.id+'\')" title="Convertir en versió">🔢</button>' : '';
+    return `
     <a class="file-card" href="${a.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
       <div class="file-icon">${fileIcon(a.mimeType,a.name)}</div>
       <div class="file-info">
-        <div class="file-name" title="${esc(a.name)}">${esc(a.name)}</div>
+        <div class="file-name" title="${esc(a.name)}">${esc(a.name)}${modChip}</div>
         <div class="file-meta">${a.source==='drive'?'Drive':'Enllaç'}${a.size?' · '+fmtFileSize(a.size):''}${(a.createdAt||a.addedAt)?' · '+new Date(a.createdAt||a.addedAt).toLocaleDateString('ca-ES',{day:'2-digit',month:'short'}):''}${a.createdBy?' · '+esc(a.createdBy):''}
         </div>
       </div>
+      ${versionBtn}
       <button class="file-del-btn" onclick="event.preventDefault();event.stopPropagation();delFileAtt('${a.id}','${entityType}','${entityId}','${folderId||''}')" title="Eliminar">✕</button>
-    </a>`).join('');
+    </a>`;
+  }).join('');
 
   const folderBtn=folderId?`<a class="drive-folder-link" href="https://drive.google.com/drive/folders/${folderId}" target="_blank" rel="noopener">📁 Obrir carpeta a Drive</a>`:'';
 
@@ -5936,7 +6157,8 @@ function renderFilesSection(container,entityType,entityId,folderId){
         <div class="files-section-title">📎 Documentació</div>
         ${folderBtn}
       </div>
-      ${atts.length?`<div class="files-grid">${fileCardsHtml}</div>`:''}
+      ${versionsHtml}
+      ${regularAtts.length?`<div class="files-grid">${fileCardsHtml}</div>`:''}
       ${uploadHtml}
       <div class="link-input-row">
         <input type="text" id="link-inp-${entityId}" placeholder="Enganxa URL (Drive, web, etc.)..." style="font-size:12px">
@@ -6875,6 +7097,8 @@ const WsDoc = {
           var j2 = await gasRun('copyDriveFile', state.doc.driveFileId, entity.name, folderId);
           result = JSON.parse(j2);
         }
+        // Marquem com a rev.0 + vàlida si no existeix ja una versió vàlida
+        var existingValid = _getValidVersion(entityType, entity.id);
         addAttachment({
           entityType:        entityType,
           entityId:          entity.id,
@@ -6885,7 +7109,10 @@ const WsDoc = {
           mimeType:          result.mimeType,
           size:              0,
           createdFromEntity: true,
-          wsDocType:         result.type || state.doc.type
+          wsDocType:         result.type || state.doc.type,
+          versionLabel:      existingValid ? null : 'rev.0',
+          isValidVersion:    existingValid ? false : true,
+          lastDriveModified: new Date().toISOString()
         });
         toast('✓ ' + (WsDoc.TYPES[state.doc.type]||{label:result.name}).label + ' creat');
         try { window.open(result.url, '_blank', 'noopener'); } catch(e){}
