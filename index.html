@@ -822,6 +822,19 @@ input[type=file].hidden-file{position:absolute;width:1px;height:1px;opacity:0;po
 .wf-detail-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)}
 .wf-banner-tech{position:sticky;top:0;z-index:50;padding:10px 16px;background:rgba(248,113,113,.12);border-bottom:2px solid var(--p-high);color:var(--p-high);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;justify-content:center}
 
+/* Inactive entities — visually muted */
+.tree-client.inactive,.tree-area.inactive,.tree-project-row.inactive{opacity:.45;font-style:italic}
+.tree-client.inactive .tree-client-name::after,.tree-area.inactive .tree-area-name::after,.tree-project-row.inactive .tree-project-name::after{content:' (inactiu)';font-size:9px;color:var(--dim);font-style:normal;letter-spacing:.5px}
+
+/* Show/hide inactive toggle */
+.sb-show-inactive-btn{background:var(--s2);border:1px solid var(--border2);color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .14s;margin:0 12px 6px;width:calc(100% - 24px)}
+.sb-show-inactive-btn:hover{background:var(--s3);color:var(--text)}
+.sb-show-inactive-btn.on{background:rgba(167,139,250,.1);border-color:var(--accent);color:var(--accent)}
+
+/* Estimated time chip in task row */
+.est-time-chip{display:inline-block;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;background:var(--s2);padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+.est-time-chip.inherited{opacity:.6}
+
 /* sidebar maintenance pill */
 .sb-maint-pill{padding:6px 10px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);border-radius:6px;font-size:10.5px;color:var(--p-high);font-weight:600;text-align:center;letter-spacing:.5px;margin:0 12px 8px}
 
@@ -1222,7 +1235,7 @@ const MONTHS=['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov',
 
 // ─── DATA ────────────────────────────────────────────────────
 let D={clients:[],areas:[],projects:[],tasks:[],subtasks:[],milestones:[],checklists:[],attachments:[],sectors:[],docTemplates:[],featureFlags:null};
-let ST={projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''}};
+let ST={projectId:null,clientId:null,areaId:null,tab:'tasks',view:'project',activeClId:null,xClients:new Set,xAreas:new Set,xTasks:new Set,dbTab:'overview',ganttZoom:'month',dbFilter:{client:'',resp:''},showInactive:false};
 let modalSave=null;
 let selColor=COLORS[0];
 let pendingAvatar=null; // null=no change, ''=remove, 'data:...'=new image
@@ -1484,7 +1497,8 @@ function save(){
   localStorage.setItem('pt3_d', payload);
   localStorage.setItem('pt3_s', JSON.stringify({
     projectId: ST.projectId, tab: ST.tab,
-    xClients: [...ST.xClients], xAreas: [...ST.xAreas]
+    xClients: [...ST.xClients], xAreas: [...ST.xAreas],
+    showInactive: ST.showInactive
   }));
   _savePendingPayload = payload;
   setSyncState('pending');
@@ -1538,6 +1552,7 @@ function load(){
     ST.tab=s.tab||'tasks';
     ST.xClients=new Set(s.xClients||[]);
     ST.xAreas=new Set(s.xAreas||[]);
+    ST.showInactive=!!s.showInactive;
   }catch(e){}
 }
 
@@ -1631,12 +1646,17 @@ function getModalContent(type,id,parentId){
                 ${(D.sectors||[]).map(s=>`<option value="${s.id}"${ex?.sectorId===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}
               </select>
               ${!(D.sectors||[]).length ? '<div style="font-size:11px;color:var(--warn);margin-top:4px">⚠ No hi ha sectors. Crea\'n un a ⚙ → Sectors.</div>' : ''}
-            </div>`,
+            </div>
+            ${id ? `<div class="fr"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text)">
+              <input type="checkbox" id="f-active" ${ex?.active===false?'':'checked'} style="accent-color:var(--accent);width:15px;height:15px">
+              <span>Client actiu</span><span style="font-size:11px;color:var(--dim)">(desmarcar per arxivar sense esborrar)</span>
+            </label></div>` : ''}`,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const sectorId=document.getElementById('f-sector')?.value||'';if(!sectorId){shake('f-sector');toast('El sector és obligatori');return}
         const avatarVal=pendingAvatar===null?(ex?.avatar||null):pendingAvatar===''?null:pendingAvatar;
-        if(id){const o=D.clients.find(c=>c.id===id);o.name=name;o.color=selColor;o.avatar=avatarVal;o.sectorId=sectorId;audit(o,true);toast('Client actualitzat')}
+        const activeVal=document.getElementById('f-active')?(document.getElementById('f-active').checked):true;
+        if(id){const o=D.clients.find(c=>c.id===id);o.name=name;o.color=selColor;o.avatar=avatarVal;o.sectorId=sectorId;o.active=activeVal;audit(o,true);toast('Client actualitzat')}
         else{const _newCl=audit({id:uid(),name,color:selColor,avatar:avatarVal,sectorId},false);
         D.clients.push(_newCl);
         toast('Client creat ✓');
@@ -1648,10 +1668,15 @@ function getModalContent(type,id,parentId){
     },
     area:{
       title:id?'Editar àrea':'Nova àrea',
-      html:`<div class="fr"><label>Nom de l'àrea</label><input type="text" id="f-name" value="${E('name')}" placeholder="p.ex. Desenvolupament, Màrqueting..."></div>`,
+      html:`<div class="fr"><label>Nom de l'àrea</label><input type="text" id="f-name" value="${E('name')}" placeholder="p.ex. Desenvolupament, Màrqueting..."></div>
+            ${id ? `<div class="fr"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text)">
+              <input type="checkbox" id="f-active" ${ex?.active===false?'':'checked'} style="accent-color:var(--accent);width:15px;height:15px">
+              <span>Àrea activa</span><span style="font-size:11px;color:var(--dim)">(desmarcar per arxivar)</span>
+            </label></div>` : ''}`,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
-        if(id){const o=D.areas.find(a=>a.id===id);o.name=name;audit(o,true);toast('Àrea actualitzada')}
+        const activeVal=document.getElementById('f-active')?(document.getElementById('f-active').checked):true;
+        if(id){const o=D.areas.find(a=>a.id===id);o.name=name;o.active=activeVal;audit(o,true);toast('Àrea actualitzada')}
         else{const a=audit({id:uid(),clientId:parentId,name},false);D.areas.push(a);ST.xAreas.add(a.id);toast('Àrea creada ✓');
         if(isConnected()) ensureAreaFolder(a.id)
           .then(function(fid){ if(fid) toast('📁 Carpeta Drive creada ✓'); })
@@ -1667,12 +1692,14 @@ function getModalContent(type,id,parentId){
               <div><label>Data d'inici</label><input type="date" id="f-start" value="${ex?.start||''}"></div>
               <div><label>Data límit</label><input type="date" id="f-end" value="${ex?.end||''}"></div>
             </div>
-            <div class="fr"><label>Project Manager (responsable del projecte)</label><input type="text" id="f-pm" value="${E('manager')}" placeholder="Nom del project manager..."></div>`,
+            <div class="fr"><label>Project Manager (responsable del projecte)</label><input type="text" id="f-pm" value="${E('manager')}" placeholder="Nom del project manager..."></div>
+            ${id ? `<div class="fr"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:normal;color:var(--text)"><input type="checkbox" id="f-active" ${ex?.active===false?'':'checked'} style="accent-color:var(--accent);width:15px;height:15px"><span>Projecte actiu</span><span style="font-size:11px;color:var(--dim)">(desmarcar per arxivar)</span></label></div>` : ''}`,
       afterRender: id ? ()=>{ _injectHistoryBtn('project', id, ex?.name||''); } : null,
       save(){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const fd={name,desc:document.getElementById('f-desc').value.trim(),start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,manager:document.getElementById('f-pm').value.trim()};
-        if(id){const o=D.projects.find(p=>p.id===id);Object.assign(o,fd);audit(o,true);toast('Projecte actualitzat')}
+        const activeVal=document.getElementById('f-active')?(document.getElementById('f-active').checked):true;
+        if(id){const o=D.projects.find(p=>p.id===id);Object.assign(o,fd);o.active=activeVal;audit(o,true);toast('Projecte actualitzat')}
         else{const p=audit({id:uid(),areaId:parentId,...fd},false);D.projects.push(p);ST.projectId=p.id;toast('Projecte creat ✓');
         if(isConnected()) ensureProjectFolder(p.id)
           .then(function(fid){ if(fid) toast('📁 Carpeta Drive creada ✓'); })
@@ -1719,6 +1746,10 @@ function getModalContent(type,id,parentId){
                 <option value="other"${V('taskType','other')}>⬦ Altre</option>
               </select></div>
             </div>
+            <div class="fr two">
+              <div><label>Temps estimat (hores)</label><input type="number" id="f-est" step="0.25" min="0" value="${ex?.estimatedHours||''}" placeholder="p.ex. 2.5"></div>
+              <div></div>
+            </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
             ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection(ex ? ex.projectId : parentId) : ''}
             ${id ? `<div id="files-sec-task-${id}" style="margin-top:8px"></div>` : ''}
@@ -1734,7 +1765,8 @@ function getModalContent(type,id,parentId){
         const name=document.getElementById('f-name').value.trim();if(!name){shake('f-name');return}
         const proj=ex?D.projects.find(p=>p.id===ex.projectId):D.projects.find(p=>p.id===parentId);
         const lead=document.getElementById('f-ass').value.trim()||(proj?.manager||'');
-        const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,taskType:document.getElementById('f-type').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:lead,technicians:document.getElementById('f-tech').value.trim(),notes:document.getElementById('f-notes').value.trim()};
+        const estVal=parseFloat(document.getElementById('f-est').value)||0;
+        const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,taskType:document.getElementById('f-type').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:lead,technicians:document.getElementById('f-tech').value.trim(),notes:document.getElementById('f-notes').value.trim(),estimatedHours:estVal};
         let _wsDocEntity;
         if(id){const o=D.tasks.find(t=>t.id===id);Object.assign(o,fd);audit(o,true);toast('Tasca actualitzada');_wsDocEntity=o;}
         else{const _nt=audit({id:uid(),projectId:parentId,...fd},false);D.tasks.push(_nt);toast('Tasca creada ✓');_wsDocEntity=_nt;}
@@ -1770,6 +1802,10 @@ function getModalContent(type,id,parentId){
               <div><label>Data límit ${inheritEnd&&!ex?.deadline?'<span style="color:var(--dim);font-size:9px">(heretada)</span>':''}</label><input type="date" id="f-dl" value="${inheritEnd}"></div>
             </div>
             <div class="fr"><label>Tècnic executor <span style="color:var(--dim);font-size:9px">(executa aquesta subtasca)</span></label><input type="text" id="f-ass" value="${E('assignee')}" placeholder="${defaultExec?`Per defecte: ${defaultExec}`:'Nom o inicials...'}"></div>
+            <div class="fr two">
+              <div><label>Temps estimat (hores)</label><input type="number" id="f-est" step="0.25" min="0" value="${ex?.estimatedHours||''}" placeholder="p.ex. 1.5"></div>
+              <div></div>
+            </div>
             <div class="fr"><label>Notes</label><textarea id="f-notes" placeholder="Informació addicional...">${E('notes')}</textarea></div>
             ${typeof WsDoc !== 'undefined' ? WsDoc.renderModalSection(ex ? D.tasks.find(t=>t.id===ex.taskId)?.projectId : D.tasks.find(t=>t.id===parentId)?.projectId) : ''}`;
       })(),
@@ -1779,7 +1815,8 @@ function getModalContent(type,id,parentId){
         const parentTask=ex?D.tasks.find(t=>t.id===ex.taskId):D.tasks.find(t=>t.id===parentId);
         const proj=parentTask?D.projects.find(p=>p.id===parentTask.projectId):null;
         const exec=document.getElementById('f-ass').value.trim()||(proj?.manager||parentTask?.assignee||'');
-        const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec,notes:document.getElementById('f-notes').value.trim()};
+        const estVal=parseFloat(document.getElementById('f-est').value)||0;
+        const fd={name,status:document.getElementById('f-st').value,priority:document.getElementById('f-pr').value,startDate:document.getElementById('f-start').value,deadline:document.getElementById('f-dl').value,assignee:exec,notes:document.getElementById('f-notes').value.trim(),estimatedHours:estVal};
         let _wsDocEntity;
         if(id){const o=D.subtasks.find(s=>s.id===id);Object.assign(o,fd);audit(o,true);toast('Subtasca actualitzada');_wsDocEntity=o;}
         else{const _ns=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(_ns);ST.xTasks.add(parentId);toast('Subtasca creada ✓');_wsDocEntity=_ns;}
@@ -2061,23 +2098,32 @@ function renderSidebar(){
   if (typeof isMaintenanceMode === 'function' && isMaintenanceMode() && !isAdmin()){
     _prefixHtml = '<div class="sb-maint-pill" title="L\'administrador està treballant en millores. Algunes funcions poden no estar disponibles.">🔧 MANTENIMENT</div>';
   }
-  el.innerHTML = _prefixHtml + sortedClients.map(cl=>{
+  // Show/hide inactive entities toggle (sticky)
+  const _inactiveCount = D.clients.filter(c=>c.active===false).length
+                       + D.areas.filter(a=>a.active===false).length
+                       + D.projects.filter(p=>p.active===false).length;
+  if (_inactiveCount > 0){
+    _prefixHtml += `<button class="sb-show-inactive-btn${ST.showInactive?' on':''}" onclick="ST.showInactive=!ST.showInactive;save();renderSidebar()" title="Mostra o amaga ${_inactiveCount} entitat${_inactiveCount!==1?'s':''} inactiva${_inactiveCount!==1?'s':''}">${ST.showInactive?'👁 Amaga':'👁‍🗨 Mostra'} inactives (${_inactiveCount})</button>`;
+  }
+  // Filter clients by active state
+  const _visibleClients = ST.showInactive ? sortedClients : sortedClients.filter(c=>c.active!==false);
+  el.innerHTML = _prefixHtml + _visibleClients.map(cl=>{
     const isOpen=ST.xClients.has(cl.id);
     const aIds=D.areas.filter(a=>a.clientId===cl.id).map(a=>a.id);
     const pIds=D.projects.filter(p=>aIds.includes(p.areaId)).map(p=>p.id);
     const total=D.tasks.filter(t=>pIds.includes(t.projectId)).length;
     const done=D.tasks.filter(t=>pIds.includes(t.projectId)&&t.status==='fet').length;
 
-    const _areas=D.areas.filter(a=>a.clientId===cl.id);
+    const _areas=D.areas.filter(a=>a.clientId===cl.id && (ST.showInactive||a.active!==false));
       const _sortedAreas=sbSortAlpha?[..._areas].sort((a,b)=>a.name.localeCompare(b.name,'ca')):_areas;
       const areasHtml=_sortedAreas.map(ar=>{
       const aOpen=ST.xAreas.has(ar.id);
-      const _projs=D.projects.filter(p=>p.areaId===ar.id);
+      const _projs=D.projects.filter(p=>p.areaId===ar.id && (ST.showInactive||p.active!==false));
         const _sortedProjs=sbSortAlpha?[..._projs].sort((a,b)=>a.name.localeCompare(b.name,'ca')):_projs;
         const projsHtml=_sortedProjs.map(pr=>{
         const isActive=ST.projectId===pr.id;
         const ptotal=D.tasks.filter(t=>t.projectId===pr.id).length;
-        return`<div class="tree-project-row${isActive?' active':''}"
+        return`<div class="tree-project-row${isActive?' active':''}${pr.active===false?' inactive':''}"
           onclick="selProject('${pr.id}')"
           ondragover="onDragOverSidebarProject(event,'${pr.id}')"
           ondragleave="onDragLeaveSidebarProject(event,'${pr.id}')"
@@ -2091,7 +2137,7 @@ function renderSidebar(){
           </div>
         </div>`;
       }).join('');
-      return`<div class="tree-area">
+      return`<div class="tree-area${ar.active===false?' inactive':''}">
         <div class="tree-area-row" onclick="treeRowToggle(event,'area','${ar.id}')">
           <button class="tree-toggle${aOpen?' open':''}" onclick="event.stopPropagation();xArea('${ar.id}')">▶</button>
           <span class="tree-area-icon" onclick="selArea('${ar.id}')" style="cursor:pointer">⊞</span>
@@ -2106,7 +2152,7 @@ function renderSidebar(){
       </div>`;
     }).join('');
 
-    return`<div class="tree-client">
+    return`<div class="tree-client${cl.active===false?' inactive':''}">
       <div class="tree-client-row${ST.clientId===cl.id&&!ST.projectId?' active-client':''}" onclick="treeRowToggle(event,'client','${cl.id}')">
         <button class="tree-toggle${isOpen?' open':''}" onclick="event.stopPropagation();xClient('${cl.id}')">▶</button>
         <div class="cl-avatar-wrap" style="${cl.avatar?'':'background:'+cl.color}" onclick="selClient('${cl.id}')" style="cursor:pointer">
@@ -2198,6 +2244,11 @@ function renderMain(){
         <div class="progress-pct">${pct}% · ${done}/${tasks.length} tasques</div>
         ${proj.end?`<span class="progress-pct" style="margin-left:6px">· Límit: ${fmtDate(proj.end)}</span>`:''}
         ${proj.manager?`<span class="progress-pct" style="margin-left:6px;color:var(--accent)">· PM: ${esc(proj.manager)}</span>`:''}
+        ${(()=>{
+          const totalEst = tasks.reduce((s,t)=>s+(parseFloat(t.estimatedHours)||0),0)
+                         + D.subtasks.filter(s=>tasks.some(t=>t.id===s.taskId)).reduce((s,x)=>s+(parseFloat(x.estimatedHours)||0),0);
+          return totalEst>0 ? `<span class="progress-pct" style="margin-left:6px">· ⏱ ${totalEst.toFixed(1)}h estimades</span>` : '';
+        })()}
       </div>
     </div>
     <div class="tb-actions">
@@ -2315,6 +2366,7 @@ function renderTasks(tasks,clrColor){
         <div class="tn-text">${esc(task.name)}</div>
         ${task.notes?`<div class="tn-notes">${esc(task.notes)}</div>`:''}
         ${subs.length?`<div class="tn-sub-count">${sdone}/${subs.length} subtasques</div>`:''}
+        ${task.estimatedHours?`<span class="est-time-chip" title="Temps estimat">⏱ ${task.estimatedHours}h</span>`:''}
         ${inherited?`<div class="task-pm">PM: ${esc(effLead)} ↑</div>`:''}
       </td>
       ${HC.status?'':`<td><button class="st-badge st-${task.status}" onclick="cycleTask('${task.id}')">${stLabel[task.status]}</button></td>`}
@@ -2352,6 +2404,7 @@ function renderTasks(tasks,clrColor){
         <td class="sub-name-td td-name" onclick="openModal('subtask','${sub.id}',null)" style="cursor:pointer">
             <div class="tn-text">${esc(sub.name)}</div>
             ${sub.notes?`<div class="tn-notes">${esc(sub.notes)}</div>`:''}
+            ${sub.estimatedHours?`<span class="est-time-chip" title="Temps estimat">⏱ ${sub.estimatedHours}h</span>`:''}
           </td>
         ${HC.status?'':`<td><button class="st-badge st-${sub.status}" onclick="cycleSub('${sub.id}')">${stLabel[sub.status]}</button></td>`}
         ${HC.prio?'':`<td></td>`}
