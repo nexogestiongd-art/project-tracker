@@ -1854,6 +1854,7 @@ function getModalContent(type,id,parentId){
             `;
       })(),
       afterRender: id?()=>{
+        _snapshotAttachmentsForModal();
         const container=document.getElementById(`files-sec-task-${id}`);
         if(container)renderFilesSection(container,'task',id,ex?.driveFolderId||'');
         if(typeof refreshAttachmentsMetadata==='function') refreshAttachmentsMetadata('task',id);
@@ -1871,6 +1872,7 @@ function getModalContent(type,id,parentId){
         else{const _nt=audit({id:uid(),projectId:parentId,...fd},false);D.tasks.push(_nt);toast('Tasca creada ✓');_wsDocEntity=_nt;}
         const _wsDocState=typeof WsDoc!=='undefined'?WsDoc.readModalState():null;
         if(_wsDocState===false)return;
+        _commitAttachmentsSnapshot();
         save();closeModal();renderMain();
         if(_wsDocState) WsDoc.createForEntity('task',_wsDocEntity,_wsDocState).then(()=>renderMain());
       }
@@ -1927,6 +1929,7 @@ function getModalContent(type,id,parentId){
         else{const _ns=audit({id:uid(),taskId:parentId,...fd},false);D.subtasks.push(_ns);ST.xTasks.add(parentId);toast('Subtasca creada ✓');_wsDocEntity=_ns;}
         const _wsDocState=typeof WsDoc!=='undefined'?WsDoc.readModalState():null;
         if(_wsDocState===false)return;
+        _commitAttachmentsSnapshot();
         save();closeModal();renderMain();
         if(_wsDocState) WsDoc.createForEntity('subtask',_wsDocEntity,_wsDocState).then(()=>renderMain());
       }
@@ -1976,7 +1979,14 @@ function openModal(type,id,parentId){
   document.getElementById('modal').classList.add('open');
   setTimeout(()=>{const f=document.getElementById('f-name');if(f)f.focus();if(cfg.afterRender)cfg.afterRender();},150);
 }
-function closeModal(){document.getElementById('modal').classList.remove('open')}
+function closeModal(){
+  // Si hi ha un snapshot d'attachments pendent (modal tancat sense Desar) → restaurar
+  if(typeof _modalAttSnapshot !== 'undefined' && _modalAttSnapshot){
+    _restoreAttachmentsFromSnapshot();
+    renderMain();
+  }
+  document.getElementById('modal').classList.remove('open');
+}
 // Modal only closes via X button, Cancel button, or Escape
 
 function renderCPicker(){
